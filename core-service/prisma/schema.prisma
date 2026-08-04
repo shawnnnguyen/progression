@@ -1,0 +1,358 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum ProjectRole {
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum ProjectVisibility {
+  ORG
+  PRIVATE 
+}
+
+enum StateCategory {
+  BACKLOG
+  TODO
+  INPROGRESS
+  DONE
+  CANCELED
+}
+
+enum Priority {
+  NONE
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TicketEventType {
+  CREATED
+  TITLE_CHANGED
+  DESCRIPTION_CHANGED
+  STATE_CHANGED
+  PRIORITY_CHANGED
+  ASSIGNED
+  UNASSIGNED
+  LABEL_ADDED
+  LABEL_REMOVED
+  SPRINT_CHANGED
+  COMMENTED
+}
+
+enum AuditEventType {
+  ORG_ROLE_CHANGED
+  ORG_MEMBER_REMOVED
+  PROJECT_CREATED
+  PROJECT_ARCHIVED
+  PROJECT_ROLE_OVERRIDE_SET
+  PROJECT_ROLE_OVERRIDE_REMOVED
+}
+
+enum SprintStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  passwordHash  String
+  avatarUrl     String?
+  deactivatedAt DateTime? 
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  memberships        Membership[]
+  projectMemberships ProjectMembership[]
+  refreshTokens      RefreshToken[]
+  invitesSent        Invite[]      @relation("InvitedBy")
+  reportedTickets    Ticket[]      @relation("TicketReporter")
+  assignedTickets    Ticket[]      @relation("TicketAssignee")
+  comments           Comment[]
+  ticketEvents       TicketEvent[]
+  auditEvents        AuditEvent[]
+}
+
+model Organization {
+  id                String   @id @default(cuid())
+  name              String
+  slug              String   @unique
+  billingPlan       String? // reserved for v2 billing; no billing logic in v1
+  billingCustomerId String? // e.g. external billing-provider customer id, reserved for v2
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  memberships Membership[]
+  projects    Project[]
+  invites     Invite[]
+  auditEvents AuditEvent[]
+}
+
+model Membership {
+  id        String   @id @default(cuid())
+  userId    String
+  orgId     String
+  role      OrgRole
+  createdAt DateTime @default(now())
+
+  user User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, orgId])
+  @@index([orgId])
+}
+
+model Invite {
+  id          String    @id @default(cuid())
+  orgId       String
+  email       String
+  role        OrgRole
+  tokenHash   String    @unique
+  invitedById String
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  invitedBy User         @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: Restrict)
+
+  @@unique([orgId, email]) 
+  @@index([orgId])
+}
+
+model Project {
+  id           String            @id @default(cuid())
+  orgId        String
+  key          String 
+  name         String
+  description  String?
+  visibility   ProjectVisibility @default(ORG)
+  nextTicketNo Int               @default(1)
+  archivedAt   DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  org                Organization         @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  projectMemberships ProjectMembership[]
+  workflowStates     WorkflowState[]
+  transitions        WorkflowTransition[]
+  tickets            Ticket[]
+  labels             Label[]
+  sprints            Sprint[]
+
+  @@unique([orgId, key])
+  @@index([orgId])
+}
+
+model ProjectMembership {
+  id        String      @id @default(cuid())
+  userId    String
+  projectId String
+  role      ProjectRole
+  createdAt DateTime    @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+  @@index([projectId])
+}
+
+model WorkflowState {
+  id        String        @id @default(cuid())
+  projectId String
+  name      String
+  category  StateCategory
+  position  Int // column order on the board
+  isDefault Boolean       @default(false) 
+  createdAt DateTime      @default(now())
+
+  project        Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  ticketsIn      Ticket[]
+  transitionsOut WorkflowTransition[] @relation("From")
+  transitionsIn  WorkflowTransition[] @relation("To")
+
+  @@unique([projectId, name])
+  @@unique([projectId, id]) 
+  @@index([projectId])
+}
+
+model WorkflowTransition {
+  id          String   @id @default(cuid())
+  projectId   String
+  fromStateId String
+  toStateId   String
+  createdAt   DateTime @default(now())
+
+  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  fromState WorkflowState @relation("From", fields: [projectId, fromStateId], references: [projectId, id])
+  toState   WorkflowState @relation("To", fields: [projectId, toStateId], references: [projectId, id])
+
+  @@unique([projectId, fromStateId, toStateId])
+}
+
+model Ticket {
+  id          String    @id @default(cuid())
+  projectId   String
+  number      Int // per-project sequence; combined with Project.key => "ENG-123"
+  title       String
+  description String?
+  priority    Priority  @default(NONE)
+  stateId     String
+  assigneeId  String?
+  reporterId  String
+  sprintId    String?
+  version     Int       @default(0) // optimistic-concurrency token — every mutating write is `WHERE id = ? AND version = ?`
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  project  Project       @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  state    WorkflowState @relation(fields: [projectId, stateId], references: [projectId, id])
+  assignee User?         @relation("TicketAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  reporter User          @relation("TicketReporter", fields: [reporterId], references: [id], onDelete: Restrict)
+  // Not a composite FK: sprintId is optional while projectId is required, and
+  // Prisma requires matching nullability across a compound relation's fields.
+  // Cross-project sprint assignment is instead blocked by a Postgres trigger
+  // (raw migration) — not worth a denormalized column to express declaratively for v1.
+  sprint   Sprint?       @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  comments Comment[]
+  events   TicketEvent[]
+  labels   TicketLabel[]
+
+  @@unique([projectId, number])
+  @@index([projectId, stateId])
+  @@index([projectId, assigneeId])
+  @@index([projectId, sprintId])
+  // Postgres-side: GIN trigram index on (title, description) for search — added via
+  // a raw migration since Prisma doesn't model pg_trgm/tsvector indexes natively.
+}
+
+model TicketEvent {
+  id            String          @id @default(cuid())
+  ticketId      String
+  type          TicketEventType
+  data          Json // shape discriminated by `type`, validated with zod at the write boundary
+  schemaVersion Int             @default(1) // bump when a given TicketEventType's `data` shape changes; readers branch on (type, schemaVersion)
+  actorUserId   String
+  createdAt     DateTime        @default(now())
+
+  ticket    Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  actorUser User   @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([ticketId, createdAt])
+  @@index([actorUserId])
+}
+
+model Comment {
+  id        String    @id @default(cuid())
+  ticketId  String
+  authorId  String
+  body      String
+  editedAt  DateTime?
+  createdAt DateTime  @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([ticketId, createdAt])
+}
+
+model Label {
+  id        String   @id @default(cuid())
+  projectId String
+  name      String
+  color     String
+  createdAt DateTime @default(now())
+
+  project Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tickets TicketLabel[]
+
+  @@unique([projectId, name])
+  @@unique([projectId, id])
+}
+
+model TicketLabel {
+  ticketId String
+  labelId  String
+
+  // Cross-project integrity (a label must belong to the same project as the
+  // ticket it's applied to) is enforced by a Postgres trigger (raw migration),
+  // not a compound FK — TicketLabel would need a denormalized projectId column
+  // to express it declaratively in Prisma, which isn't worth the bloat for v1.
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  // Restrict, not Cascade: DELETE /labels/:id must 409 while any ticket still
+  // has the label applied (§4), and this FK is what actually makes that true
+  // under concurrency — labelService's isInUse() pre-check narrows the
+  // window but can't close a race against a concurrent PATCH applying the
+  // label between the check and the delete; the database constraint can.
+  label Label @relation(fields: [labelId], references: [id], onDelete: Restrict)
+
+  @@id([ticketId, labelId])
+}
+
+model Sprint {
+  id        String       @id @default(cuid())
+  projectId String
+  name      String
+  goal      String?
+  startDate DateTime
+  endDate   DateTime
+  status    SprintStatus @default(PLANNED)
+  createdAt DateTime     @default(now())
+
+  project Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tickets Ticket[]
+
+  @@unique([projectId, id]) // reserved for a future compound FK from Ticket if the trigger approach above is upgraded
+  @@index([projectId])
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Security/administrative audit trail — org role changes, membership removal,
+// project lifecycle. Deliberately separate from TicketEvent, which is a
+// ticket activity feed, not a general audit log.
+model AuditEvent {
+  id          String         @id @default(cuid())
+  orgId       String
+  type        AuditEventType
+  data        Json
+  actorUserId String
+  createdAt   DateTime       @default(now())
+
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  actorUser User         @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([orgId, createdAt])
+}
