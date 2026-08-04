@@ -2,7 +2,6 @@ import { ForbiddenError, NotFoundError } from "../errors/index.js";
 import { can, type Actor, type AuthzDeps } from "./authz.js";
 import type { WorkflowStateRow, WorkflowTransitionRow } from "./types.js";
 
-// v1 is read-only (§4) — v2 adds mutation endpoints for admin-editable workflows.
 export interface WorkflowReadRepository {
   listWorkflowStates(projectId: string): Promise<WorkflowStateRow[]>;
   listWorkflowTransitions(projectId: string): Promise<WorkflowTransitionRow[]>;
