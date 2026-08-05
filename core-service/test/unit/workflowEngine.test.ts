@@ -36,7 +36,7 @@ describe("isTransitionAllowed", () => {
   });
 });
 
-describe("seed workflow template (v1 fixed policy)", () => {
+describe("seed workflow template (v1 any-to-any policy)", () => {
   it("has exactly one default state", () => {
     const defaults = SEED_WORKFLOW_STATES.filter((s) => s.isDefault);
     expect(defaults).toHaveLength(1);
@@ -58,13 +58,13 @@ describe("seed workflow template (v1 fixed policy)", () => {
     expect(fromCanceled).toBe(true);
   });
 
-  it("simulated against isTransitionAllowed: Todo -> In Progress -> Done is a legal path", () => {
+  it("simulated against isTransitionAllowed: every state can move directly to every other state", () => {
     const rows: WorkflowTransitionRow[] = SEED_WORKFLOW_TRANSITIONS.map((t) => ({
       fromStateId: t.from,
       toStateId: t.to,
     }));
     expect(isTransitionAllowed("Todo", "In Progress", rows)).toBe(true);
     expect(isTransitionAllowed("In Progress", "Done", rows)).toBe(true);
-    expect(isTransitionAllowed("Todo", "Done", rows)).toBe(false);
+    expect(isTransitionAllowed("Todo", "Done", rows)).toBe(true);
   });
 });

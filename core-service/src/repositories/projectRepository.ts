@@ -63,21 +63,36 @@ export const projectRepository: ProjectRepository = {
 
     const overrides = await prisma.projectMembership.findMany({ where: { projectId } });
 
+    type BareMember = Omit<EffectiveProjectMember, "name" | "avatarUrl">;
+    let bareMembers: BareMember[];
+
     if (project.visibility === "PRIVATE") {
-      return overrides.map((o) => ({ userId: o.userId, role: o.role, source: "override" as const }));
+      bareMembers = overrides.map((o) => ({ userId: o.userId, role: o.role, source: "override" as const }));
+    } else {
+      const orgMembers = await prisma.membership.findMany({ where: { orgId: project.orgId } });
+      const overrideByUser = new Map(overrides.map((o) => [o.userId, o.role]));
+
+      bareMembers = orgMembers.map((m): BareMember => {
+        const override = overrideByUser.get(m.userId);
+        if (override) {
+          const floored = m.role === "OWNER" && PROJECT_ROLE_RANK[override] < PROJECT_ROLE_RANK.ADMIN ? "ADMIN" : override;
+          return { userId: m.userId, role: floored, source: "override" };
+        }
+        return { userId: m.userId, role: mapOrgRoleToProjectRole(m.role), source: "org" };
+      });
     }
 
-    const orgMembers = await prisma.membership.findMany({ where: { orgId: project.orgId } });
-    const overrideByUser = new Map(overrides.map((o) => [o.userId, o.role]));
-
-    return orgMembers.map((m): EffectiveProjectMember => {
-      const override = overrideByUser.get(m.userId);
-      if (override) {
-        const floored = m.role === "OWNER" && PROJECT_ROLE_RANK[override] < PROJECT_ROLE_RANK.ADMIN ? "ADMIN" : override;
-        return { userId: m.userId, role: floored, source: "override" };
-      }
-      return { userId: m.userId, role: mapOrgRoleToProjectRole(m.role), source: "org" };
+    const users = await prisma.user.findMany({
+      where: { id: { in: bareMembers.map((m) => m.userId) } },
+      select: { id: true, name: true, avatarUrl: true },
     });
+    const userById = new Map(users.map((u) => [u.id, u]));
+
+    return bareMembers.map((m) => ({
+      ...m,
+      name: userById.get(m.userId)?.name ?? "",
+      avatarUrl: userById.get(m.userId)?.avatarUrl ?? null,
+    }));
   },
 
   async setProjectMemberOverride(projectId, userId, role) {

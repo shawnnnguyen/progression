@@ -51,6 +51,12 @@ export interface MembershipRow {
   createdAt: Date;
 }
 
+/** `MembershipRow` plus the user identity fields — used only by the org members listing. */
+export interface OrgMemberRow extends MembershipRow {
+  name: string;
+  avatarUrl: string | null;
+}
+
 export interface InviteRow {
   id: string;
   orgId: string;

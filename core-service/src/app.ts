@@ -1,8 +1,10 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import cookie from "@fastify/cookie";
+import cors from "@fastify/cors";
 import { registerErrorHandler } from "./errors/index.js";
 import websocketPlugin from "./plugins/websocketPlugin.js";
 import authPlugin from "./plugins/authPlugin.js";
+import { config } from "./config.js";
 
 import authRoutes, { meRoutes } from "./routes/auth.routes.js";
 import orgsRoutes from "./routes/orgs.routes.js";
@@ -19,11 +21,13 @@ export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({ logger: process.env.NODE_ENV !== "test" });
 
   registerErrorHandler(app);
+  await app.register(cors, { origin: config.webOrigin, credentials: true });
   await app.register(cookie);
   await app.register(websocketPlugin);
 
   await app.register(
     async (publicApp) => {
+      publicApp.get("/health", async () => ({ data: { status: "ok" } }));
       await publicApp.register(authRoutes);
       await publicApp.register(wsRoutes);
     },

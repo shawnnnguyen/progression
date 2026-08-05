@@ -19,6 +19,8 @@ export interface EffectiveProjectMember {
   userId: string;
   role: ProjectRole;
   source: "override" | "org";
+  name: string;
+  avatarUrl: string | null;
 }
 
 export interface ProjectRepository {

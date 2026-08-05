@@ -26,18 +26,17 @@ export interface SeedWorkflowTransition {
 }
 
 export const SEED_WORKFLOW_STATES: SeedWorkflowState[] = [
-  { name: "Todo", category: "TODO", position: 0, isDefault: true },
-  { name: "In Progress", category: "INPROGRESS", position: 1, isDefault: false },
-  { name: "Done", category: "DONE", position: 2, isDefault: false },
-  { name: "Canceled", category: "CANCELED", position: 3, isDefault: false },
+  { name: "Backlog", category: "BACKLOG", position: 0, isDefault: false },
+  { name: "Todo", category: "TODO", position: 1, isDefault: true },
+  { name: "In Progress", category: "INPROGRESS", position: 2, isDefault: false },
+  { name: "Done", category: "DONE", position: 3, isDefault: false },
+  { name: "Canceled", category: "CANCELED", position: 4, isDefault: false },
 ];
 
-export const SEED_WORKFLOW_TRANSITIONS: SeedWorkflowTransition[] = [
-  { from: "Todo", to: "In Progress" },
-  { from: "In Progress", to: "Done" },
-  { from: "In Progress", to: "Todo" },
-  { from: "In Progress", to: "Canceled" },
-  { from: "Todo", to: "Canceled" },
-  { from: "Done", to: "In Progress" },
-  { from: "Canceled", to: "Todo" },
-];
+// Every state can move to every other state — a curated sequential graph was
+// too restrictive in practice, so the default workflow permits any-to-any
+// transitions instead. Generated (not hand-listed) so it stays complete
+// automatically if SEED_WORKFLOW_STATES ever changes.
+export const SEED_WORKFLOW_TRANSITIONS: SeedWorkflowTransition[] = SEED_WORKFLOW_STATES.flatMap((from) =>
+  SEED_WORKFLOW_STATES.filter((to) => to.name !== from.name).map((to) => ({ from: from.name, to: to.name })),
+);

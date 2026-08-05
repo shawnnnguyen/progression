@@ -19,6 +19,7 @@ function parseDurationMs(value: string): number {
 export const config = {
   port: Number(process.env.PORT ?? 3000),
   host: process.env.HOST ?? "0.0.0.0",
+  webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:5173",
   databaseUrl: required("DATABASE_URL"),
   jwt: {
     accessSecret: required("JWT_ACCESS_SECRET"),

@@ -69,6 +69,29 @@ describe("org + project CRUD round trip", () => {
   });
 });
 
+describe("org member list identity enrichment", () => {
+  it("includes each member's name and avatarUrl alongside role", async () => {
+    const owner = await createUser("Olivia Owner");
+    const member = await createUser("Max Member");
+    const org = await createOrgWithOwner(owner.id, "Acme");
+    await addOrgMember(org.id, member.id, "MEMBER");
+
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/v1/orgs/${org.id}/members`,
+      headers: authHeader(owner.id),
+    });
+    expect(res.statusCode).toBe(200);
+
+    const rows: Array<{ userId: string; name: string; avatarUrl: string | null }> = res.json().data;
+    const ownerEntry = rows.find((r) => r.userId === owner.id);
+    const memberEntry = rows.find((r) => r.userId === member.id);
+    expect(ownerEntry?.name).toBe("Olivia Owner");
+    expect(memberEntry?.name).toBe("Max Member");
+    expect(memberEntry?.avatarUrl).toBeNull();
+  });
+});
+
 describe("org member role changes and the last-owner invariant", () => {
   it("rejects demoting the sole owner (409 LAST_OWNER)", async () => {
     const owner = await createUser("Owner");

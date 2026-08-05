@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { ConflictError, ForbiddenError, LastOwnerError, NotFoundError, ValidationError } from "../errors/index.js";
 import { can, type Actor, type AuthzDeps, type OrgRole } from "./authz.js";
-import type { AuditEventRow, InviteRow, MembershipRow, OrganizationRow, Page } from "./types.js";
+import type { AuditEventRow, InviteRow, MembershipRow, OrgMemberRow, OrganizationRow, Page } from "./types.js";
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -15,7 +15,7 @@ export interface OrgRepository {
 
 export interface MembershipRepository {
   findMembershipByUserAndOrg(userId: string, orgId: string): Promise<MembershipRow | null>;
-  listMembershipsForOrg(orgId: string): Promise<MembershipRow[]>;
+  listMembershipsForOrg(orgId: string): Promise<OrgMemberRow[]>;
   countActiveOwnersForOrg(orgId: string): Promise<number>;
   changeMembershipRole(orgId: string, userId: string, role: OrgRole): Promise<MembershipRow>;
 
@@ -143,7 +143,7 @@ export async function acceptInvite(
   return result.membership;
 }
 
-export async function listOrgMembers(actor: Actor, orgId: string, deps: MembershipServiceDeps): Promise<MembershipRow[]> {
+export async function listOrgMembers(actor: Actor, orgId: string, deps: MembershipServiceDeps): Promise<OrgMemberRow[]> {
   const result = await can(deps, actor, "org:read", { kind: "org", orgId });
   if (result === "NOT_FOUND") throw new NotFoundError("Organization not found");
   if (result === "FORBIDDEN") throw new ForbiddenError();

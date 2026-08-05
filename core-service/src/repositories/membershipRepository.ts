@@ -7,7 +7,12 @@ export const membershipRepository: MembershipRepository = {
   },
 
   async listMembershipsForOrg(orgId) {
-    return prisma.membership.findMany({ where: { orgId }, orderBy: { createdAt: "asc" } });
+    const memberships = await prisma.membership.findMany({
+      where: { orgId },
+      orderBy: { createdAt: "asc" },
+      include: { user: { select: { name: true, avatarUrl: true } } },
+    });
+    return memberships.map(({ user, ...m }) => ({ ...m, name: user.name, avatarUrl: user.avatarUrl }));
   },
 
   async countActiveOwnersForOrg(orgId) {
