@@ -4,3 +4,10 @@ dist/
 *.log
 coverage/
 .vscode/
+.idea/
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+
+.agents/skills/
+.claude/skills/

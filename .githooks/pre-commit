@@ -1,0 +1,32 @@
+#!/usr/bin/env sh
+# Pre-commit checks for core-service: strict typecheck, lint, a non-blocking
+# security scan, and unit-test/architecture-boundary sanity checks.
+#
+# Tracked here (not .git/hooks) so it's shared across clones — enable it
+# once per clone with: git config core.hooksPath .githooks
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+# Skip entirely if this commit doesn't touch core-service (any add, modify,
+# delete, or rename under that path still counts).
+if ! git diff --cached --name-only | grep -q '^core-service/'; then
+  exit 0
+fi
+
+cd "$REPO_ROOT/core-service"
+
+echo "[pre-commit] typecheck (strict)"
+npm run --silent typecheck
+
+echo "[pre-commit] lint"
+npm run --silent lint
+
+echo "[pre-commit] security scan (npm audit — informational, does not block)"
+npm audit --audit-level=high || echo "[pre-commit] npm audit found issues above — not blocking the commit; fix on your own schedule"
+
+echo "[pre-commit] sanity checks (unit tests + architecture boundaries)"
+npm run --silent test:unit
+npm run --silent boundaries
+
+echo "[pre-commit] all checks passed"
