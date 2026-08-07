@@ -9,18 +9,21 @@ export type ActivityFeedItem =
 
 const RECENT_ITEM_LIMIT = 5;
 
-export function useActivityFeed(ticketId: string | undefined) {
+export function useActivityFeed(ticketId: string | undefined, options?: { includeComments?: boolean }) {
+  const includeComments = options?.includeComments ?? true;
   const eventsQuery = useTicketEvents(ticketId);
-  const commentsQuery = useComments(ticketId);
+  const commentsQuery = useComments(includeComments ? ticketId : undefined);
 
   const items = useMemo(() => {
     const events = (eventsQuery.data ?? [])
       .filter((event) => event.type !== "COMMENTED")
       .map((event): ActivityFeedItem => ({ kind: "event", id: event.id, createdAt: event.createdAt, event }));
 
-    const comments = (commentsQuery.data ?? []).map(
-      (comment): ActivityFeedItem => ({ kind: "comment", id: comment.id, createdAt: comment.createdAt, comment }),
-    );
+    const comments = includeComments
+      ? (commentsQuery.data ?? []).map(
+          (comment): ActivityFeedItem => ({ kind: "comment", id: comment.id, createdAt: comment.createdAt, comment }),
+        )
+      : [];
 
     const sorted = [...events, ...comments].sort((a, b) => {
       const diff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
@@ -28,11 +31,11 @@ export function useActivityFeed(ticketId: string | undefined) {
     });
 
     return sorted.slice(-RECENT_ITEM_LIMIT);
-  }, [eventsQuery.data, commentsQuery.data]);
+  }, [eventsQuery.data, commentsQuery.data, includeComments]);
 
   return {
     items,
-    isLoading: eventsQuery.isLoading || commentsQuery.isLoading,
-    isError: eventsQuery.isError || commentsQuery.isError,
+    isLoading: eventsQuery.isLoading || (includeComments && commentsQuery.isLoading),
+    isError: eventsQuery.isError || (includeComments && commentsQuery.isError),
   };
 }

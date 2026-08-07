@@ -1,43 +1,50 @@
 import { useState } from "react";
 import { UserAvatar } from "@/components/domain/UserAvatar";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useProjectMemberMap } from "@/features/projects/hooks/useProjectMembers";
-import { useWorkflowStates } from "@/features/workflow/hooks/useWorkflowStates";
-import { useSprints } from "@/features/sprints/hooks/useSprints";
-import { useLabels } from "@/features/labels/hooks/useLabels";
+import type { EffectiveProjectMember } from "@/features/projects/types";
 import { useActivityFeed, type ActivityFeedItem } from "../hooks/useActivityFeed";
+import { useEventDescriptionContext } from "../hooks/useEventDescriptionContext";
+import { useTicketEventsInfinite } from "../hooks/useTicketEventsInfinite";
+import type { CommentRow, TicketEventRow } from "../types";
 import { EventDescription, type EventDescriptionContext } from "./EventDescription";
 import { formatEventTimestamp, formatTimeOnly } from "../lib/formatTimestamp";
 import { TicketMarkdown } from "./TicketMarkdown";
 
 type FeedContext = EventDescriptionContext;
 
-function EventLine({ item, ctx }: { item: Extract<ActivityFeedItem, { kind: "event" }>; ctx: FeedContext }) {
-  const actor = ctx.memberMap.get(item.event.actorUserId);
+export function EventLine({ event, ctx }: { event: TicketEventRow; ctx: FeedContext }) {
+  const actor = ctx.memberMap.get(event.actorUserId);
   return (
     <div className="flex items-start justify-between gap-3 text-sm">
       <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-        <UserAvatar userId={item.event.actorUserId} name={actor?.name} avatarUrl={actor?.avatarUrl} size="sm" />
+        <UserAvatar userId={event.actorUserId} name={actor?.name} avatarUrl={actor?.avatarUrl} size="sm" />
         <span className="font-medium text-[var(--color-text)]">{actor?.name ?? "Unknown"}</span>
-        <EventDescription event={item.event} ctx={ctx} />
+        <EventDescription event={event} ctx={ctx} />
       </div>
-      <span className="shrink-0 pt-0.5 text-xs text-[var(--color-neutral-500)]">{formatEventTimestamp(item.createdAt)}</span>
+      <span className="shrink-0 pt-0.5 text-xs text-[var(--color-neutral-500)]">{formatEventTimestamp(event.createdAt)}</span>
     </div>
   );
 }
 
-function CommentCard({ item, ctx }: { item: Extract<ActivityFeedItem, { kind: "comment" }>; ctx: FeedContext }) {
-  const author = ctx.memberMap.get(item.comment.authorId);
+export function CommentCard({
+  comment,
+  memberMap,
+}: {
+  comment: CommentRow;
+  memberMap: Map<string, EffectiveProjectMember>;
+}) {
+  const author = memberMap.get(comment.authorId);
   return (
     <div className="rounded-md bg-[var(--color-surface)] p-2.5">
       <div className="flex items-center gap-2 text-xs text-[var(--color-neutral-500)]">
-        <UserAvatar userId={item.comment.authorId} name={author?.name} avatarUrl={author?.avatarUrl} size="sm" />
+        <UserAvatar userId={comment.authorId} name={author?.name} avatarUrl={author?.avatarUrl} size="sm" />
         <span className="font-medium text-[var(--color-text)]">{author?.name ?? "Unknown"}</span>
-        <span>{formatEventTimestamp(item.createdAt)}</span>
-        {item.comment.editedAt && <span>· edited {formatTimeOnly(item.comment.editedAt)}</span>}
+        <span>{formatEventTimestamp(comment.createdAt)}</span>
+        {comment.editedAt && <span>· edited {formatTimeOnly(comment.editedAt)}</span>}
       </div>
-      <TicketMarkdown content={item.comment.body} className="mt-1.5" />
+      <TicketMarkdown content={comment.body} className="mt-1.5" />
     </div>
   );
 }
@@ -50,10 +57,10 @@ function FeedList({ items, ctx }: { items: ActivityFeedItem[]; ctx: FeedContext 
     <div className="flex flex-col gap-4">
       {items.map((item) =>
         item.kind === "event" ? (
-          <EventLine key={`event-${item.id}`} item={item} ctx={ctx} />
+          <EventLine key={`event-${item.id}`} event={item.event} ctx={ctx} />
         ) : (
           <div key={`comment-${item.id}`}>
-            <CommentCard item={item} ctx={ctx} />
+            <CommentCard comment={item.comment} memberMap={ctx.memberMap} />
           </div>
         ),
       )}
@@ -65,26 +72,88 @@ const ACTIVITY_LABEL = (
   <h2 className="shrink-0 text-xs font-medium tracking-wide text-[var(--color-neutral-500)] uppercase">Activity</h2>
 );
 
+function PaginatedEventList({ ticketId, projectId }: { ticketId: string; projectId: string }) {
+  const { data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } = useTicketEventsInfinite(ticketId);
+  const ctx = useEventDescriptionContext(projectId);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-2">
+        {ACTIVITY_LABEL}
+        <Skeleton className="h-5 w-full" />
+        <Skeleton className="h-5 w-full" />
+        <Skeleton className="h-5 w-2/3" />
+      </div>
+    );
+  }
+
+  // Pages arrive newest-first; flatten keeps that order, then reverse once for oldest-first display.
+  const events = (data?.pages ?? [])
+    .flatMap((page) => page.data)
+    .filter((event) => event.type !== "COMMENTED")
+    .reverse();
+
+  return (
+    <div className="flex flex-col gap-2">
+      {ACTIVITY_LABEL}
+      {hasNextPage && (
+        <Button variant="outline" size="sm" disabled={isFetchingNextPage} onClick={() => fetchNextPage()}>
+          {isFetchingNextPage ? "Loading…" : "Load older activity"}
+        </Button>
+      )}
+      {events.length === 0 ? (
+        <p className="py-4 text-sm text-[var(--color-neutral-500)]">Nothing here yet.</p>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {events.map((event) => (
+            <EventLine key={event.id} event={event} ctx={ctx} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ActivityFeed({
   ticketId,
   projectId,
   showTabs = true,
+  includeComments = true,
+  paginated = false,
 }: {
   ticketId: string;
   projectId: string;
   showTabs?: boolean;
+  includeComments?: boolean;
+  paginated?: boolean;
 }) {
-  const { items, isLoading } = useActivityFeed(ticketId);
-  const { memberMap } = useProjectMemberMap(projectId);
-  const { data: states } = useWorkflowStates(projectId);
-  const { data: sprints } = useSprints(projectId);
-  const { data: labels } = useLabels(projectId);
-  const [tab, setTab] = useState<"all" | "comments">("all");
+  if (paginated) {
+    return <PaginatedEventList ticketId={ticketId} projectId={projectId} />;
+  }
+  return (
+    <MergedActivityFeed
+      ticketId={ticketId}
+      projectId={projectId}
+      showTabs={showTabs}
+      includeComments={includeComments}
+    />
+  );
+}
 
-  const stateMap = new Map((states ?? []).map((state) => [state.id, state]));
-  const sprintMap = new Map((sprints ?? []).map((sprint) => [sprint.id, sprint]));
-  const labelMap = new Map((labels ?? []).map((label) => [label.id, label]));
-  const ctx: FeedContext = { memberMap, stateMap, sprintMap, labelMap };
+function MergedActivityFeed({
+  ticketId,
+  projectId,
+  showTabs,
+  includeComments,
+}: {
+  ticketId: string;
+  projectId: string;
+  showTabs: boolean;
+  includeComments: boolean;
+}) {
+  const ctx = useEventDescriptionContext(projectId);
+  const { items, isLoading } = useActivityFeed(ticketId, { includeComments });
+  const [tab, setTab] = useState<"all" | "comments">("all");
 
   if (isLoading) {
     return (
@@ -99,7 +168,7 @@ export function ActivityFeed({
 
   const commentItems = items.filter((item) => item.kind === "comment");
 
-  if (!showTabs) {
+  if (!showTabs || !includeComments) {
     return (
       <div className="flex flex-col gap-2">
         {ACTIVITY_LABEL}

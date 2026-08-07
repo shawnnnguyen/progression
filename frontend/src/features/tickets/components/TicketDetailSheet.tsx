@@ -57,7 +57,6 @@ export function TicketDetailSheet({
               ticket={ticketQuery.data}
               projectId={projectId}
               projectKey={projectKey}
-              showTabs={false}
               showByline={false}
               metaSlot={<TicketDetailMetaStrip ticket={ticketQuery.data} projectId={projectId} />}
             />

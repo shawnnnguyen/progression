@@ -53,7 +53,13 @@ export function TicketDetailPage({ projectId, ticketNumber }: { projectId: strin
       <TicketDetailTopbar project={projectQuery.data} ticket={ticketQuery.data} />
       <div className="flex flex-1 overflow-y-auto">
         <div className="flex-1 p-6">
-          <TicketDetailContent ticket={ticketQuery.data} projectId={projectId} projectKey={projectQuery.data.key} />
+          <TicketDetailContent
+            ticket={ticketQuery.data}
+            projectId={projectId}
+            projectKey={projectQuery.data.key}
+            showActivityFeed={false}
+            showCommentFeed
+          />
         </div>
         <TicketDetailRail ticket={ticketQuery.data} projectId={projectId} />
       </div>
