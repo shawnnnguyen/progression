@@ -29,28 +29,28 @@ export function TicketRow({
       <TableCell>
         <PriorityIcon priority={ticket.priority} />
       </TableCell>
-      <TableCell className="text-xs text-muted-foreground">
+      <TableCell className="text-sm font-medium text-muted-foreground">
         {projectKey}-{ticket.number}
       </TableCell>
-      <TableCell className="max-w-md truncate">{ticket.title}</TableCell>
-      <TableCell>
+      <TableCell className="max-w-md truncate text-sm">{ticket.title}</TableCell>
+      <TableCell className="overflow-hidden">
         {state && (
           <span className="flex items-center gap-1.5 text-sm">
             <StateDot category={state.category} />
-            {state.name}
+            <span className="truncate">{state.name}</span>
           </span>
         )}
       </TableCell>
-      <TableCell>
-        <span className={cn("flex items-center gap-1.5", !ticket.assigneeId && "text-xs text-muted-foreground")}>
+      <TableCell className="overflow-hidden">
+        <span className={cn("flex items-center gap-1.5 text-sm", !ticket.assigneeId && "text-muted-foreground")}>
           <UserAvatar userId={ticket.assigneeId} name={assignee?.name} avatarUrl={assignee?.avatarUrl} size="sm" />
-          {ticket.assigneeId ? assignee?.name : "Unassigned"}
+          <span className="truncate">{ticket.assigneeId ? assignee?.name : "Unassigned"}</span>
         </span>
       </TableCell>
-      <TableCell className="text-xs text-muted-foreground">{sprint?.name ?? "—"}</TableCell>
+      <TableCell className="text-sm text-muted-foreground">{sprint?.name ?? "—"}</TableCell>
       <TableCell>
         {ticket.labels.length === 0 ? (
-          <span className="text-xs text-muted-foreground">—</span>
+          <span className="text-sm text-muted-foreground">—</span>
         ) : (
           <div className="flex flex-wrap items-center gap-1">
             {ticket.labels.map((label) => (

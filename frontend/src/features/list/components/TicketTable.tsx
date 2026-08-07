@@ -21,16 +21,16 @@ export function TicketTable({
   onOpenTicket?: (ticket: Ticket) => void;
 }) {
   return (
-    <Table>
+    <Table className="table-fixed">
       <TableHeader>
         <TableRow>
           <TableHead className="w-8"></TableHead>
-          <TableHead>Key</TableHead>
+          <TableHead className="w-20">Key</TableHead>
           <TableHead>Title</TableHead>
-          <TableHead>State</TableHead>
-          <TableHead>Assignee</TableHead>
-          <TableHead>Sprint</TableHead>
-          <TableHead>Labels</TableHead>
+          <TableHead className="w-44">State</TableHead>
+          <TableHead className="w-52">Assignee</TableHead>
+          <TableHead className="w-32">Sprint</TableHead>
+          <TableHead className="w-64">Labels</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
