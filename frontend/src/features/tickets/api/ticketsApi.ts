@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api";
-import type { TicketFilters, TicketRow, TicketsPage } from "../types";
+import type { TicketFilters, TicketPatchInput, TicketRow, TicketsPage } from "../types";
 
 function buildQuery(params: Record<string, string | number | undefined>): string {
   const search = new URLSearchParams();
@@ -29,5 +29,20 @@ export function transitionTicket(ticketId: string, input: { toStateId: string; v
   return apiFetch<{ data: TicketRow }>(`/tickets/${ticketId}/transition`, {
     method: "POST",
     body: JSON.stringify(input),
+  });
+}
+
+export function getTicket(ticketId: string) {
+  return apiFetch<{ data: TicketRow }>(`/tickets/${ticketId}`);
+}
+
+export function getTicketByNumber(projectId: string, number: number) {
+  return apiFetch<{ data: TicketRow }>(`/projects/${projectId}/tickets/number/${number}`);
+}
+
+export function updateTicket(ticketId: string, patch: TicketPatchInput) {
+  return apiFetch<{ data: TicketRow }>(`/tickets/${ticketId}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
   });
 }
