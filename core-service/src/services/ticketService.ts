@@ -33,7 +33,6 @@ export interface TicketFilter {
   labelId?: string;
   sprintId?: string;
   q?: string;
-  /** Resync after a WS drop (§2): only tickets updated after this instant. */
   updatedSince?: Date;
   cursor?: string | null;
   limit?: number;
@@ -41,6 +40,7 @@ export interface TicketFilter {
 
 export interface TicketRepository {
   findTicketById(ticketId: string): Promise<TicketRow | null>;
+  findTicketByNumber(projectId: string, number: number): Promise<TicketRow | null>;
   listTickets(projectId: string, filter: TicketFilter): Promise<Page<TicketRow>>;
   listTicketsAssignedToUser(userId: string, cursor?: string | null, limit?: number): Promise<Page<TicketRow>>;
   createTicket(
@@ -111,6 +111,18 @@ export async function createTicket(actor: Actor, input: CreateTicketInput, deps:
 
 export async function getTicket(actor: Actor, ticketId: string, deps: TicketServiceDeps): Promise<TicketRow> {
   const ticket = await deps.tickets.findTicketById(ticketId);
+  if (!ticket) throw new NotFoundError("Ticket not found");
+  await requireProjectRole(deps, actor, ticket.projectId, "ticket:read");
+  return ticket;
+}
+
+export async function getTicketByNumber(
+  actor: Actor,
+  projectId: string,
+  number: number,
+  deps: TicketServiceDeps,
+): Promise<TicketRow> {
+  const ticket = await deps.tickets.findTicketByNumber(projectId, number);
   if (!ticket) throw new NotFoundError("Ticket not found");
   await requireProjectRole(deps, actor, ticket.projectId, "ticket:read");
   return ticket;

@@ -1,6 +1,13 @@
+import type { Label, Prisma } from "@prisma/client";
 import { prisma } from "./prismaClient.js";
 import { clampLimit, cursorWhereDesc, buildPage } from "./pagination.js";
 import type { SprintRepository } from "../services/sprintService.js";
+
+const TICKET_LABELS_INCLUDE = { labels: { include: { label: true } } } satisfies Prisma.TicketInclude;
+
+function toTicketRow<T extends { labels: { label: Label }[] }>(row: T) {
+  return { ...row, labels: row.labels.map((ticketLabel) => ticketLabel.label) };
+}
 
 export const sprintRepository: SprintRepository = {
   async findSprintById(sprintId) {
@@ -27,8 +34,6 @@ export const sprintRepository: SprintRepository = {
     return prisma.sprint.update({ where: { id: sprintId }, data: patch });
   },
 
-  // Tickets in the sprint fall back to sprintId = null (SetNull, §3) via the
-  // FK itself — no explicit unset step needed here.
   async deleteSprint(sprintId) {
     await prisma.sprint.delete({ where: { id: sprintId } });
   },
@@ -39,7 +44,8 @@ export const sprintRepository: SprintRepository = {
       where: { sprintId, ...(cursorWhereDesc(cursor) ?? {}) },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: take + 1,
+      include: TICKET_LABELS_INCLUDE,
     });
-    return buildPage(rows, take);
+    return buildPage(rows.map(toTicketRow), take);
   },
 };

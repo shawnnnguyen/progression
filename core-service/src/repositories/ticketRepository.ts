@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Label, Prisma } from "@prisma/client";
 import { prisma } from "./prismaClient.js";
 import { clampLimit, cursorWhereDesc, buildPage } from "./pagination.js";
 import type { TicketEventType } from "../services/types.js";
@@ -9,20 +9,29 @@ function toEventRow<T extends { data: unknown }>(row: T) {
   return { ...row, data: row.data as Record<string, unknown> };
 }
 
+const TICKET_LABELS_INCLUDE = { labels: { include: { label: true } } } satisfies Prisma.TicketInclude;
+
+function toTicketRow<T extends { labels: { label: Label }[] }>(row: T) {
+  return { ...row, labels: row.labels.map((ticketLabel) => ticketLabel.label) };
+}
+
 export const ticketRepository: TicketRepository = {
   async findTicketById(ticketId) {
-    return prisma.ticket.findUnique({ where: { id: ticketId } });
+    const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, include: TICKET_LABELS_INCLUDE });
+    return ticket ? toTicketRow(ticket) : null;
+  },
+
+  async findTicketByNumber(projectId, number) {
+    const ticket = await prisma.ticket.findUnique({
+      where: { projectId_number: { projectId, number } },
+      include: TICKET_LABELS_INCLUDE,
+    });
+    return ticket ? toTicketRow(ticket) : null;
   },
 
   async listTickets(projectId, filter) {
     const take = clampLimit(filter.limit);
 
-    // Both the `q` search and the cursor guard produce an `OR: [...]` clause
-    // — spreading two objects that each set the same `OR` key into one
-    // literal would let the second silently clobber the first (exactly what
-    // happened here originally: every page after the first quietly dropped
-    // the search filter). Collecting them under one `AND` keeps each
-    // condition's own OR intact.
     const conditions: Prisma.TicketWhereInput[] = [{ projectId, archivedAt: null }];
     if (filter.stateId) conditions.push({ stateId: filter.stateId });
     if (filter.assigneeId) conditions.push({ assigneeId: filter.assigneeId });
@@ -46,8 +55,9 @@ export const ticketRepository: TicketRepository = {
       where,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: take + 1,
+      include: TICKET_LABELS_INCLUDE,
     });
-    return buildPage(rows, take);
+    return buildPage(rows.map(toTicketRow), take);
   },
 
   async listTicketsAssignedToUser(userId, cursor, limit) {
@@ -56,15 +66,11 @@ export const ticketRepository: TicketRepository = {
       where: { assigneeId: userId, archivedAt: null, ...(cursorWhereDesc(cursor) ?? {}) },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: take + 1,
+      include: TICKET_LABELS_INCLUDE,
     });
-    return buildPage(rows, take);
+    return buildPage(rows.map(toTicketRow), take);
   },
 
-  // Ticket numbering (§2): the increment is a single atomic UPDATE (Prisma's
-  // `{ increment: 1 }`) that takes Postgres's row lock on Project, so two
-  // concurrent creates are serialized by Postgres, never by app-level
-  // read-then-write. `nextTicketNo` holds "the next number to assign", so the
-  // post-increment value minus one is this ticket's number.
   async createTicket(input, defaultStateId) {
     return prisma.$transaction(async (tx) => {
       const project = await tx.project.update({
@@ -95,15 +101,10 @@ export const ticketRepository: TicketRepository = {
         },
       });
 
-      return ticket;
+      return { ...ticket, labels: [] };
     });
   },
 
-  // One event per semantically distinct field change (§2 "Audit / activity
-  // log"), all in the same transaction as the entity write. The actual
-  // concurrency guard is the `updateMany` WHERE clause below, not the initial
-  // read — a concurrent writer that already bumped the version makes this
-  // `updateMany` affect 0 rows and we return null (§2 STALE_STATE).
   async updateTicketIfVersionMatches(ticketId, expectedVersion, patch, actorUserId) {
     return prisma.$transaction(async (tx) => {
       const current = await tx.ticket.findUnique({ where: { id: ticketId } });
@@ -136,9 +137,6 @@ export const ticketRepository: TicketRepository = {
         if (patch.sprintId !== null) {
           const sprint = await tx.sprint.findUnique({ where: { id: patch.sprintId }, select: { projectId: true } });
           if (!sprint || sprint.projectId !== current.projectId) {
-            // Caught here, before the write, so this is a 400 the client can
-            // act on — not the cross-project-scoping Postgres trigger firing
-            // as an opaque 500 (see the raw_constraints migration).
             throw new ValidationError("sprintId must belong to this ticket's project");
           }
         }
@@ -184,13 +182,11 @@ export const ticketRepository: TicketRepository = {
         });
       }
 
-      return tx.ticket.findUniqueOrThrow({ where: { id: ticketId } });
+      const updated = await tx.ticket.findUniqueOrThrow({ where: { id: ticketId }, include: TICKET_LABELS_INCLUDE });
+      return toTicketRow(updated);
     });
   },
 
-  // Conditional update guards on BOTH the workflow state and the version
-  // (the API contract takes `{ toStateId, version }`) — either one being
-  // stale means 0 rows affected, mapped to STALE_STATE by ticketService.
   async transitionTicketState(ticketId, fromStateId, toStateId, expectedVersion, actorUserId) {
     return prisma.$transaction(async (tx) => {
       const updateResult = await tx.ticket.updateMany({
@@ -203,7 +199,8 @@ export const ticketRepository: TicketRepository = {
         data: { ticketId, type: "STATE_CHANGED", data: { fromStateId, toStateId }, actorUserId },
       });
 
-      return tx.ticket.findUniqueOrThrow({ where: { id: ticketId } });
+      const updated = await tx.ticket.findUniqueOrThrow({ where: { id: ticketId }, include: TICKET_LABELS_INCLUDE });
+      return toTicketRow(updated);
     });
   },
 

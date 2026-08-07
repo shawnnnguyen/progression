@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach } from "vitest";
 import {
   createTicket,
   getTicket,
+  getTicketByNumber,
   transitionTicket,
   updateTicket,
   type TicketServiceDeps,
@@ -31,6 +32,7 @@ function makeTicket(overrides: Partial<TicketRow> = {}): TicketRow {
     archivedAt: null,
     createdAt: new Date("2026-01-01T00:00:00Z"),
     updatedAt: new Date("2026-01-01T00:00:00Z"),
+    labels: [],
     ...overrides,
   };
 }
@@ -55,6 +57,9 @@ function makeDeps(opts: { orgRole?: "OWNER" | "ADMIN" | "MEMBER" | "VIEWER"; tic
     tickets: {
       async findTicketById(ticketId) {
         return ticketsMap.get(ticketId) ?? null;
+      },
+      async findTicketByNumber(projectId, number) {
+        return [...ticketsMap.values()].find((t) => t.projectId === projectId && t.number === number) ?? null;
       },
       async listTickets() {
         return { data: [...ticketsMap.values()], nextCursor: null };
@@ -148,6 +153,27 @@ describe("getTicket", () => {
     const { deps } = makeDeps({ tickets: [ticket] });
     const result = await getTicket(actor, ticket.id, deps);
     expect(result.id).toBe(ticket.id);
+  });
+});
+
+describe("getTicketByNumber", () => {
+  it("throws NotFoundError for a nonexistent ticket number", async () => {
+    const { deps } = makeDeps();
+    await expect(getTicketByNumber(actor, PROJECT_ID, 999, deps)).rejects.toThrow(NotFoundError);
+  });
+
+  it("returns the ticket when the actor has read access", async () => {
+    const ticket = makeTicket({ number: 42 });
+    const { deps } = makeDeps({ tickets: [ticket] });
+    const result = await getTicketByNumber(actor, PROJECT_ID, 42, deps);
+    expect(result.id).toBe(ticket.id);
+  });
+
+  it("throws NotFoundError when the actor has no visibility into the project", async () => {
+    const ticket = makeTicket({ number: 42 });
+    const { deps } = makeDeps({ tickets: [ticket] });
+    deps.getProjectContext = async () => null;
+    await expect(getTicketByNumber(actor, PROJECT_ID, 42, deps)).rejects.toThrow(NotFoundError);
   });
 });
 

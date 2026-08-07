@@ -210,4 +210,117 @@ describe("ticket CRUD + workflow transitions (full route -> service -> DB round 
     });
     expect(eventsRes.json().data.some((e: { type: string }) => e.type === "COMMENTED")).toBe(true);
   });
+
+  it("looks up a ticket by project + number, and the returned id round-trips against comments/events", async () => {
+    const { owner, project } = await setupProject();
+    const ticket = (
+      await app.inject({
+        method: "POST",
+        url: `/api/v1/projects/${project.id}/tickets`,
+        headers: authHeader(owner.id),
+        payload: { title: "Findable by number" },
+      })
+    ).json().data;
+
+    const byNumberRes = await app.inject({
+      method: "GET",
+      url: `/api/v1/projects/${project.id}/tickets/number/${ticket.number}`,
+      headers: authHeader(owner.id),
+    });
+    expect(byNumberRes.statusCode).toBe(200);
+    expect(byNumberRes.json().data.id).toBe(ticket.id);
+
+    const commentsRes = await app.inject({
+      method: "GET",
+      url: `/api/v1/tickets/${ticket.id}/comments`,
+      headers: authHeader(owner.id),
+    });
+    expect(commentsRes.statusCode).toBe(200);
+
+    const eventsRes = await app.inject({
+      method: "GET",
+      url: `/api/v1/tickets/${ticket.id}/events`,
+      headers: authHeader(owner.id),
+    });
+    expect(eventsRes.statusCode).toBe(200);
+  });
+
+  it("returns 404 for an unknown ticket number in an otherwise valid project", async () => {
+    const { owner, project } = await setupProject();
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/v1/projects/${project.id}/tickets/number/999`,
+      headers: authHeader(owner.id),
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it("a stranger org's member gets 404 for another org's ticket looked up by number", async () => {
+    const { owner, project } = await setupProject();
+    const ticket = (
+      await app.inject({
+        method: "POST",
+        url: `/api/v1/projects/${project.id}/tickets`,
+        headers: authHeader(owner.id),
+        payload: { title: "Ticket" },
+      })
+    ).json().data;
+
+    const outsider = await createUser("Outsider");
+    await createOrgWithOwner(outsider.id, "Org B");
+
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/v1/projects/${project.id}/tickets/number/${ticket.number}`,
+      headers: authHeader(outsider.id),
+    });
+    expect(res.statusCode).toBe(404);
+    expect(res.json().error.code).toBe("NOT_FOUND");
+  });
+
+  it("labels attached via PATCH are echoed back on the ticket in both list and get responses", async () => {
+    const { owner, project } = await setupProject();
+    const ticket = (
+      await app.inject({
+        method: "POST",
+        url: `/api/v1/projects/${project.id}/tickets`,
+        headers: authHeader(owner.id),
+        payload: { title: "Ticket" },
+      })
+    ).json().data;
+    expect(ticket.labels).toEqual([]);
+
+    const labelRes = await app.inject({
+      method: "POST",
+      url: `/api/v1/projects/${project.id}/labels`,
+      headers: authHeader(owner.id),
+      payload: { name: "api", color: "#4287f5" },
+    });
+    expect(labelRes.statusCode).toBe(201);
+    const label = labelRes.json().data;
+
+    const patchRes = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/tickets/${ticket.id}`,
+      headers: authHeader(owner.id),
+      payload: { version: ticket.version, labelIds: [label.id] },
+    });
+    expect(patchRes.statusCode).toBe(200);
+    expect(patchRes.json().data.labels).toEqual([label]);
+
+    const getRes = await app.inject({
+      method: "GET",
+      url: `/api/v1/tickets/${ticket.id}`,
+      headers: authHeader(owner.id),
+    });
+    expect(getRes.json().data.labels).toEqual([label]);
+
+    const listRes = await app.inject({
+      method: "GET",
+      url: `/api/v1/projects/${project.id}/tickets`,
+      headers: authHeader(owner.id),
+    });
+    const listedTicket = listRes.json().data.find((t: { id: string }) => t.id === ticket.id);
+    expect(listedTicket.labels).toEqual([label]);
+  });
 });

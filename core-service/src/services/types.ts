@@ -121,6 +121,7 @@ export interface TicketRow {
   archivedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  labels: LabelRow[];
 }
 
 export interface TicketEventRow {

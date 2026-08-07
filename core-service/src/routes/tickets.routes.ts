@@ -6,10 +6,6 @@ import { paginationQuerySchema } from "../schemas/common.schema.js";
 
 const PRIORITY_ENUM = ["NONE", "LOW", "MEDIUM", "HIGH", "URGENT"] as const;
 
-// The five ★ endpoints from BACKEND_PLAN.md §4 (create, list/search,
-// transition, comment, link) are agent-service's first integration surface.
-// Everything except the PR/commit link endpoint is implemented here — links
-// are deferred along with the rest of the agent-service integration.
 export default async function ticketsRoutes(app: FastifyInstance) {
   app.post(
     "/projects/:projectId/tickets",
@@ -97,6 +93,27 @@ export default async function ticketsRoutes(app: FastifyInstance) {
     return reply.send({ data: ticket });
   });
 
+  app.get(
+    "/projects/:projectId/tickets/number/:number",
+    {
+      schema: {
+        params: {
+          type: "object",
+          required: ["projectId", "number"],
+          properties: {
+            projectId: { type: "string" },
+            number: { type: "integer", minimum: 1 },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { projectId, number } = request.params as { projectId: string; number: number };
+      const ticket = await ticketService.getTicketByNumber(request.actor, projectId, number, ticketDeps);
+      return reply.send({ data: ticket });
+    },
+  );
+
   app.patch(
     "/tickets/:ticketId",
     {
@@ -107,7 +124,7 @@ export default async function ticketsRoutes(app: FastifyInstance) {
           properties: {
             version: { type: "integer", minimum: 0 },
             title: { type: "string", minLength: 1, maxLength: 500 },
-            description: { type: "string" },
+            description: { type: ["string", "null"] },
             priority: { type: "string", enum: PRIORITY_ENUM },
             assigneeId: { type: ["string", "null"] },
             sprintId: { type: ["string", "null"] },
