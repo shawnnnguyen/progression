@@ -5,7 +5,9 @@ import { useOrgProjects } from "@/features/projects/hooks/useOrgProjects";
 import { useProjectsByIds } from "@/features/projects/hooks/useProjectsByIds";
 import { useMyTickets } from "@/features/tickets/hooks/useMyTickets";
 import { useWorkflowStatesByProjectIds } from "@/features/workflow/hooks/useWorkflowStatesByProjectIds";
+import { useSprintsByProjectIds } from "@/features/sprints/hooks/useSprintsByProjectIds";
 import type { WorkflowState } from "@/features/workflow/types";
+import type { Sprint } from "@/features/sprints/types";
 import { MyIssuesPanel } from "./MyIssuesPanel";
 import { DashboardRightRail } from "./DashboardRightRail";
 
@@ -15,9 +17,6 @@ export function DashboardPage() {
   const myTicketsQuery = useMyTickets();
 
   const tickets = myTicketsQuery.data?.tickets ?? [];
-  // Dynamic project-id set derived from /me/tickets — fanned out via useQueries.
-  // Depends on the query's own data reference (stable across renders), not the
-  // `?? []` fallback above, which would otherwise be a fresh array every render.
   const projectIds = useMemo(
     () => Array.from(new Set((myTicketsQuery.data?.tickets ?? []).map((ticket) => ticket.projectId))),
     [myTicketsQuery.data],
@@ -25,12 +24,14 @@ export function DashboardPage() {
 
   const projectQueries = useProjectsByIds(projectIds);
   const workflowStateQueries = useWorkflowStatesByProjectIds(projectIds);
+  const sprintQueries = useSprintsByProjectIds(projectIds);
 
   const isLoading =
     myTicketsQuery.isLoading ||
     orgProjectsQuery.isLoading ||
     projectQueries.some((query) => query.isLoading) ||
-    workflowStateQueries.some((query) => query.isLoading);
+    workflowStateQueries.some((query) => query.isLoading) ||
+    sprintQueries.some((query) => query.isLoading);
 
   if (isLoading) {
     return (
@@ -59,12 +60,18 @@ export function DashboardPage() {
     if (query.data) projectKeyById.set(query.data.id, query.data.key);
   }
 
+  const sprintById = new Map<string, Sprint>();
+  for (const query of sprintQueries) {
+    for (const sprint of query.data ?? []) sprintById.set(sprint.id, sprint);
+  }
+
   return (
     <div className="grid grid-cols-[1fr_320px] gap-6 p-6">
       <MyIssuesPanel
         tickets={tickets}
         stateById={stateById}
         projectKeyById={projectKeyById}
+        sprintById={sprintById}
         isCapped={myTicketsQuery.data?.isCapped ?? false}
       />
       <DashboardRightRail projects={orgProjectsQuery.data ?? []} />

@@ -1,3 +1,11 @@
+import { ChevronDownIcon } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { SortOption } from "../lib/sortTickets";
 
 const OPTIONS: { value: SortOption; label: string }[] = [
@@ -8,18 +16,26 @@ const OPTIONS: { value: SortOption; label: string }[] = [
 ];
 
 export function SortControl({ value, onChange }: { value: SortOption; onChange: (value: SortOption) => void }) {
+  const current = OPTIONS.find((option) => option.value === value);
+
   return (
-    <select
-      value={value}
-      onChange={(event) => onChange(event.target.value as SortOption)}
-      className="h-8 rounded-md border border-input bg-background px-2 text-sm"
-      aria-label="Sort tickets"
-    >
-      {OPTIONS.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        aria-label="Sort tickets"
+        className="flex h-9 items-center gap-1.5 rounded-md px-2 text-sm font-medium text-muted-foreground outline-none transition-colors hover:text-foreground data-popup-open:text-foreground"
+      >
+        Sort: {current?.label ?? "Newest"}
+        <ChevronDownIcon className="size-3.5 shrink-0" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-48">
+        <DropdownMenuRadioGroup value={value} onValueChange={(next) => onChange(next as SortOption)}>
+          {OPTIONS.map((option) => (
+            <DropdownMenuRadioItem key={option.value} value={option.value}>
+              {option.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

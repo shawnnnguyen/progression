@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useProject } from "@/features/projects/hooks/useProject";
@@ -8,7 +9,8 @@ import { useWorkflowStateMap } from "@/features/workflow/hooks/useWorkflowStateM
 import { useSprints } from "@/features/sprints/hooks/useSprints";
 import { useLabels } from "@/features/labels/hooks/useLabels";
 import { useProjectTickets } from "@/features/tickets/hooks/useProjectTickets";
-import type { TicketFilters } from "@/features/tickets/types";
+import { TicketDetailSheet } from "@/features/tickets/components/TicketDetailSheet";
+import type { TicketFilters, TicketRow } from "@/features/tickets/types";
 import { TicketFilterBar } from "./TicketFilterBar";
 import { TicketTable } from "./TicketTable";
 import { sortTickets, type SortOption } from "../lib/sortTickets";
@@ -16,6 +18,24 @@ import { sortTickets, type SortOption } from "../lib/sortTickets";
 export function ProjectListPage({ projectId }: { projectId: string }) {
   const [filters, setFilters] = useState<TicketFilters>({});
   const [sort, setSort] = useState<SortOption>("default");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const openTicketNumber = searchParams.get("ticket");
+
+  function openTicket(ticket: TicketRow) {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("ticket", String(ticket.number));
+      return next;
+    });
+  }
+
+  function closeTicket() {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("ticket");
+      return next;
+    });
+  }
 
   const projectQuery = useProject(projectId);
   const ticketsQuery = useProjectTickets(projectId, filters);
@@ -28,6 +48,8 @@ export function ProjectListPage({ projectId }: { projectId: string }) {
     () => sortTickets(ticketsQuery.data?.tickets ?? [], sort),
     [ticketsQuery.data, sort],
   );
+
+  const sprintMap = useMemo(() => new Map((sprints ?? []).map((sprint) => [sprint.id, sprint])), [sprints]);
 
   if (projectQuery.isLoading || ticketsQuery.isLoading) {
     return (
@@ -94,7 +116,14 @@ export function ProjectListPage({ projectId }: { projectId: string }) {
             )}
           </div>
         ) : (
-          <TicketTable tickets={sortedTickets} stateMap={stateMap} memberMap={memberMap} />
+          <TicketTable
+            tickets={sortedTickets}
+            stateMap={stateMap}
+            memberMap={memberMap}
+            sprintMap={sprintMap}
+            projectKey={projectQuery.data.key}
+            onOpenTicket={openTicket}
+          />
         )}
         {ticketsQuery.data?.isCapped && (
           <p className="mt-4 text-xs text-muted-foreground">
@@ -102,6 +131,14 @@ export function ProjectListPage({ projectId }: { projectId: string }) {
           </p>
         )}
       </div>
+      {openTicketNumber && !Number.isNaN(Number(openTicketNumber)) && (
+        <TicketDetailSheet
+          projectId={projectId}
+          projectKey={projectQuery.data.key}
+          ticketNumber={Number(openTicketNumber)}
+          onClose={closeTicket}
+        />
+      )}
     </div>
   );
 }

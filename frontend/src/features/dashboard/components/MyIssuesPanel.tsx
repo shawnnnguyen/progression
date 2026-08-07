@@ -1,10 +1,8 @@
 import type { TicketRow } from "@/features/tickets/types";
 import type { StateCategory, WorkflowState } from "@/features/workflow/types";
+import type { Sprint } from "@/features/sprints/types";
 import { IssueGroupSection } from "./IssueGroupSection";
 
-// Groups by real StateCategory (not a project-specific WorkflowState.name like
-// the design mock's literal "QA" header) since a name can't generalize across
-// projects with different workflows.
 const GROUP_ORDER: StateCategory[] = ["INPROGRESS", "TODO", "BACKLOG"];
 const GROUP_LABELS: Record<StateCategory, string> = {
   INPROGRESS: "In Progress",
@@ -18,11 +16,13 @@ export function MyIssuesPanel({
   tickets,
   stateById,
   projectKeyById,
+  sprintById,
   isCapped,
 }: {
   tickets: TicketRow[];
   stateById: Map<string, WorkflowState>;
   projectKeyById: Map<string, string>;
+  sprintById: Map<string, Sprint>;
   isCapped: boolean;
 }) {
   const groups = GROUP_ORDER.map((category) => ({
@@ -40,9 +40,10 @@ export function MyIssuesPanel({
           <IssueGroupSection
             key={group.category}
             title={GROUP_LABELS[group.category]}
+            category={group.category}
             tickets={group.tickets}
-            stateById={stateById}
             projectKeyById={projectKeyById}
+            sprintById={sprintById}
           />
         ))
       )}

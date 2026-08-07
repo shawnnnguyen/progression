@@ -8,9 +8,13 @@ import type { TicketRow } from "@/features/tickets/types";
 export function DraggableTicketCard({
   ticket,
   assignee,
+  projectKey,
+  onOpen,
 }: {
   ticket: TicketRow;
   assignee: EffectiveProjectMember | undefined;
+  projectKey: string;
+  onOpen?: (ticket: TicketRow) => void;
 }) {
   const { setNodeRef, listeners, attributes, transform, transition, isDragging } = useSortable({ id: ticket.id });
 
@@ -20,13 +24,15 @@ export function DraggableTicketCard({
       {...listeners}
       {...attributes}
       style={{ transform: CSS.Translate.toString(transform), transition }}
-      // Hidden (not unmounted, so layout space is preserved and the column
-      // doesn't reflow) while this card is the one being dragged — DragOverlay
-      // renders the visible floating copy, so this avoids a doubled-up card
-      // effect during the drag.
-      className={cn("cursor-grab touch-none active:cursor-grabbing", isDragging && "opacity-0")}
+      className={cn("touch-none", isDragging && "opacity-0")}
     >
-      <TicketCard ticket={ticket} assignee={assignee} />
+    
+      <TicketCard
+        ticket={ticket}
+        assignee={assignee}
+        projectKey={projectKey}
+        onOpen={onOpen && !isDragging ? onOpen : undefined}
+      />
     </div>
   );
 }

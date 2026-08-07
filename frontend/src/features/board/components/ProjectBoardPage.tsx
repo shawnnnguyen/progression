@@ -1,3 +1,4 @@
+import { useSearchParams } from "react-router-dom";
 import { DndContext, DragOverlay, closestCenter } from "@dnd-kit/core";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,8 @@ import { ProjectTopbar } from "@/features/projects/components/ProjectTopbar";
 import { useWorkflowStates } from "@/features/workflow/hooks/useWorkflowStates";
 import { useProjectTickets } from "@/features/tickets/hooks/useProjectTickets";
 import { TicketCard } from "@/features/tickets/components/TicketCard";
+import { TicketDetailSheet } from "@/features/tickets/components/TicketDetailSheet";
+import type { TicketRow } from "@/features/tickets/types";
 import { useBoardDragAndDrop } from "../hooks/useBoardDragAndDrop";
 import { BoardColumns } from "./BoardColumns";
 
@@ -15,11 +18,25 @@ export function ProjectBoardPage({ projectId }: { projectId: string }) {
   const statesQuery = useWorkflowStates(projectId);
   const ticketsQuery = useProjectTickets(projectId, {});
   const { memberMap } = useProjectMemberMap(projectId);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const openTicketNumber = searchParams.get("ticket");
 
-  // Called unconditionally, above the loading/error early returns below, so
-  // hook call order never changes between renders (Rules of Hooks) — it's
-  // safe to call before data has loaded since drag handlers simply won't
-  // fire until the board itself is rendered.
+  function openTicket(ticket: TicketRow) {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("ticket", String(ticket.number));
+      return next;
+    });
+  }
+
+  function closeTicket() {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("ticket");
+      return next;
+    });
+  }
+
   const {
     sensors,
     activeTicket,
@@ -84,6 +101,8 @@ export function ProjectBoardPage({ projectId }: { projectId: string }) {
             activeTicketId={activeTicket?.id}
             legalStateIds={legalStateIds}
             legalityLoading={legalityLoading}
+            projectKey={projectQuery.data.key}
+            onOpenTicket={openTicket}
           />
           {/*
             Default drop animation is disabled: it animates the overlay back
@@ -100,6 +119,7 @@ export function ProjectBoardPage({ projectId }: { projectId: string }) {
               <TicketCard
                 ticket={activeTicket}
                 assignee={activeTicket.assigneeId ? memberMap.get(activeTicket.assigneeId) : undefined}
+                projectKey={projectQuery.data.key}
               />
             )}
           </DragOverlay>
@@ -110,6 +130,14 @@ export function ProjectBoardPage({ projectId }: { projectId: string }) {
           </p>
         )}
       </div>
+      {openTicketNumber && !Number.isNaN(Number(openTicketNumber)) && (
+        <TicketDetailSheet
+          projectId={projectId}
+          projectKey={projectQuery.data.key}
+          ticketNumber={Number(openTicketNumber)}
+          onClose={closeTicket}
+        />
+      )}
     </div>
   );
 }

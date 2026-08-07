@@ -1,21 +1,13 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { cn } from "@/lib/utils";
 
-const FALLBACK_PALETTE = [
-  "bg-rose-500",
-  "bg-orange-500",
-  "bg-amber-500",
-  "bg-emerald-500",
-  "bg-teal-500",
-  "bg-sky-500",
-  "bg-indigo-500",
-  "bg-violet-500",
-  "bg-fuchsia-500",
+const FALLBACK_PALETTE: { bg: string; fg: string }[] = [
+  { bg: "var(--color-accent-700)", fg: "var(--color-accent-100)" },
+  { bg: "var(--color-accent-2-700)", fg: "var(--color-accent-2-100)" },
+  { bg: "var(--color-neutral-700)", fg: "var(--color-neutral-100)" },
+  { bg: "var(--color-neutral-800)", fg: "var(--color-neutral-200)" },
+  { bg: "var(--color-accent-800)", fg: "var(--color-accent-200)" },
 ];
 
-// Deterministic per-id color/initials so an assignee without a resolved
-// name/avatar (gap #1 in the implementation plan) still reads as a stable
-// identity across renders, rather than a blank or random-looking glyph.
 function hashToIndex(id: string, length: number): number {
   let hash = 0;
   for (let i = 0; i < id.length; i++) {
@@ -38,20 +30,29 @@ export function UserAvatar({
   size = "default",
   className,
 }: {
-  userId: string;
+  userId: string | null;
   name?: string | null;
   avatarUrl?: string | null;
   size?: "sm" | "default" | "lg";
   className?: string;
 }) {
-  const colorClass = FALLBACK_PALETTE[hashToIndex(userId, FALLBACK_PALETTE.length)];
+  // Unassigned: transparent fill, muted "?" — matches the design's "none" tone.
+  if (!userId) {
+    return (
+      <Avatar size={size} className={className} title="Unassigned">
+        <AvatarFallback style={{ backgroundColor: "transparent", color: "var(--color-neutral-500)" }}>?</AvatarFallback>
+      </Avatar>
+    );
+  }
+
+  const { bg, fg } = FALLBACK_PALETTE[hashToIndex(userId, FALLBACK_PALETTE.length)];
   const fallbackText = name ? initialsFromName(name) : userId.slice(0, 2).toUpperCase();
   const title = name ?? `Unknown user (${userId.slice(0, 8)})`;
 
   return (
     <Avatar size={size} className={className} title={title}>
       {avatarUrl && <AvatarImage src={avatarUrl} alt={title} />}
-      <AvatarFallback className={cn("text-white", colorClass)}>{fallbackText}</AvatarFallback>
+      <AvatarFallback style={{ backgroundColor: bg, color: fg }}>{fallbackText}</AvatarFallback>
     </Avatar>
   );
 }

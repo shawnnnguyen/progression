@@ -2,22 +2,36 @@ import { TableCell, TableRow as UiTableRow } from "@/components/ui/table";
 import { PriorityIcon } from "@/components/domain/PriorityIcon";
 import { StateDot } from "@/components/domain/StateDot";
 import { UserAvatar } from "@/components/domain/UserAvatar";
+import { LabelTag } from "@/components/domain/LabelTag";
+import { cn } from "@/lib/utils";
 import type { EffectiveProjectMember } from "@/features/projects/types";
 import type { WorkflowState } from "@/features/workflow/types";
+import type { Sprint } from "@/features/sprints/types";
 import type { TicketRow as Ticket } from "../types";
 
 export function TicketRow({
   ticket,
   state,
   assignee,
+  sprint,
+  projectKey,
+  onOpen,
 }: {
   ticket: Ticket;
   state: WorkflowState | undefined;
   assignee: EffectiveProjectMember | undefined;
+  sprint: Sprint | undefined;
+  projectKey: string;
+  onOpen?: (ticket: Ticket) => void;
 }) {
   return (
-    <UiTableRow>
-      <TableCell className="font-mono text-xs text-muted-foreground">#{ticket.number}</TableCell>
+    <UiTableRow className={onOpen ? "cursor-pointer" : undefined} onClick={onOpen ? () => onOpen(ticket) : undefined}>
+      <TableCell>
+        <PriorityIcon priority={ticket.priority} />
+      </TableCell>
+      <TableCell className="text-xs text-muted-foreground">
+        {projectKey}-{ticket.number}
+      </TableCell>
       <TableCell className="max-w-md truncate">{ticket.title}</TableCell>
       <TableCell>
         {state && (
@@ -28,14 +42,21 @@ export function TicketRow({
         )}
       </TableCell>
       <TableCell>
-        <PriorityIcon priority={ticket.priority} />
-      </TableCell>
-      <TableCell className="text-muted-foreground">—</TableCell>
-      <TableCell>
-        {ticket.assigneeId ? (
+        <span className={cn("flex items-center gap-1.5", !ticket.assigneeId && "text-xs text-muted-foreground")}>
           <UserAvatar userId={ticket.assigneeId} name={assignee?.name} avatarUrl={assignee?.avatarUrl} size="sm" />
+          {ticket.assigneeId ? assignee?.name : "Unassigned"}
+        </span>
+      </TableCell>
+      <TableCell className="text-xs text-muted-foreground">{sprint?.name ?? "—"}</TableCell>
+      <TableCell>
+        {ticket.labels.length === 0 ? (
+          <span className="text-xs text-muted-foreground">—</span>
         ) : (
-          <span className="text-xs text-muted-foreground">Unassigned</span>
+          <div className="flex flex-wrap items-center gap-1">
+            {ticket.labels.map((label) => (
+              <LabelTag key={label.id} label={label} />
+            ))}
+          </div>
         )}
       </TableCell>
     </UiTableRow>

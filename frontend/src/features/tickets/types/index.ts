@@ -1,3 +1,5 @@
+import type { Label } from "@/features/labels/types";
+
 export type Priority = "NONE" | "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 
 export interface TicketRow {
@@ -15,6 +17,7 @@ export interface TicketRow {
   archivedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  labels: Label[];
 }
 
 export interface TicketFilters {

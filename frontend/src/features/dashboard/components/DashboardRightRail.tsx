@@ -1,6 +1,5 @@
 import { ActiveProjectCard } from "./ActiveProjectCard";
 import { ActiveSprintCard } from "./ActiveSprintCard";
-import { RecentActivityPanel } from "./RecentActivityPanel";
 import type { ProjectRow } from "@/features/projects/types";
 
 const TOP_N_PROJECTS = 3;
@@ -19,7 +18,6 @@ export function DashboardRightRail({ projects }: { projects: ProjectRow[] }) {
         )}
       </section>
       <ActiveSprintCard projects={projects} />
-      <RecentActivityPanel />
     </div>
   );
 }

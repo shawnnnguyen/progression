@@ -10,6 +10,8 @@ export function BoardColumns({
   activeTicketId,
   legalStateIds,
   legalityLoading,
+  projectKey,
+  onOpenTicket,
 }: {
   states: WorkflowState[];
   tickets: TicketRow[];
@@ -17,6 +19,8 @@ export function BoardColumns({
   activeTicketId: string | undefined;
   legalStateIds: Set<string>;
   legalityLoading: boolean;
+  projectKey: string;
+  onOpenTicket?: (ticket: TicketRow) => void;
 }) {
   return (
     <div className="flex gap-4">
@@ -29,6 +33,8 @@ export function BoardColumns({
           activeTicketId={activeTicketId}
           legalStateIds={legalStateIds}
           legalityLoading={legalityLoading}
+          projectKey={projectKey}
+          onOpenTicket={onOpenTicket}
         />
       ))}
     </div>
