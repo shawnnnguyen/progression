@@ -1,32 +1,38 @@
 #!/usr/bin/env sh
-# Pre-commit checks for core-service: strict typecheck, lint, a non-blocking
-# security scan, and unit-test/architecture-boundary sanity checks.
-#
-# Tracked here (not .git/hooks) so it's shared across clones — enable it
-# once per clone with: git config core.hooksPath .githooks
 set -e
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
+STAGED="$(git diff --cached --name-only)"
 
-# Skip entirely if this commit doesn't touch core-service (any add, modify,
-# delete, or rename under that path still counts).
-if ! git diff --cached --name-only | grep -q '^core-service/'; then
-  exit 0
+if echo "$STAGED" | grep -q '^core-service/'; then
+  cd "$REPO_ROOT/core-service"
+
+  echo "[pre-commit] core-service: typecheck (strict)"
+  npm run --silent typecheck
+
+  echo "[pre-commit] core-service: lint"
+  npm run --silent lint
+
+  echo "[pre-commit] core-service: security scan (npm audit — informational, does not block)"
+  npm audit --audit-level=high || echo "[pre-commit] npm audit found issues above — not blocking the commit; fix on your own schedule"
+
+  echo "[pre-commit] core-service: sanity checks (unit tests + architecture boundaries)"
+  npm run --silent test:unit
+  npm run --silent boundaries
+
+  cd "$REPO_ROOT"
 fi
 
-cd "$REPO_ROOT/core-service"
+if echo "$STAGED" | grep -q '^frontend/'; then
+  cd "$REPO_ROOT/frontend"
 
-echo "[pre-commit] typecheck (strict)"
-npm run --silent typecheck
+  echo "[pre-commit] frontend: typecheck"
+  npm run --silent typecheck
 
-echo "[pre-commit] lint"
-npm run --silent lint
+  echo "[pre-commit] frontend: lint"
+  npm run --silent lint
 
-echo "[pre-commit] security scan (npm audit — informational, does not block)"
-npm audit --audit-level=high || echo "[pre-commit] npm audit found issues above — not blocking the commit; fix on your own schedule"
-
-echo "[pre-commit] sanity checks (unit tests + architecture boundaries)"
-npm run --silent test:unit
-npm run --silent boundaries
+  cd "$REPO_ROOT"
+fi
 
 echo "[pre-commit] all checks passed"
