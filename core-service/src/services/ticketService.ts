@@ -9,7 +9,10 @@ export interface CreateTicketInput {
   title: string;
   description?: string | null;
   priority?: Priority;
+  stateId?: string;
   assigneeId?: string | null;
+  sprintId?: string | null;
+  labelIds?: string[];
 }
 
 export interface TicketPatchInput {
@@ -95,6 +98,9 @@ export async function createTicket(actor: Actor, input: CreateTicketInput, deps:
   const states = await deps.workflow.listWorkflowStates(input.projectId);
   const defaultState = states.find((s) => s.isDefault);
   if (!defaultState) throw new NotFoundError("Project has no default workflow state");
+  if (input.stateId && !states.some((s) => s.id === input.stateId)) {
+    throw new ValidationError("stateId must belong to this ticket's project");
+  }
 
   const ticket = await deps.tickets.createTicket({ ...input, reporterId: actor.userId }, defaultState.id);
 

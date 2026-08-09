@@ -47,6 +47,112 @@ describe("ticket CRUD + workflow transitions (full route -> service -> DB round 
     expect(events.some((e: { type: string }) => e.type === "CREATED")).toBe(true);
   });
 
+  it("creates a ticket with an explicit state, sprint, and labels", async () => {
+    const { owner, project } = await setupProject();
+
+    const statesRes = await app.inject({
+      method: "GET",
+      url: `/api/v1/projects/${project.id}/workflow-states`,
+      headers: authHeader(owner.id),
+    });
+    const inProgressState = statesRes.json().data.find((s: { category: string }) => s.category === "INPROGRESS");
+
+    const sprintRes = await app.inject({
+      method: "POST",
+      url: `/api/v1/projects/${project.id}/sprints`,
+      headers: authHeader(owner.id),
+      payload: { name: "Sprint 1", startDate: "2026-01-01T00:00:00Z", endDate: "2026-01-14T00:00:00Z" },
+    });
+    const sprint = sprintRes.json().data;
+
+    const labelRes = await app.inject({
+      method: "POST",
+      url: `/api/v1/projects/${project.id}/labels`,
+      headers: authHeader(owner.id),
+      payload: { name: "bug", color: "#ff0000" },
+    });
+    const label = labelRes.json().data;
+
+    const createRes = await app.inject({
+      method: "POST",
+      url: `/api/v1/projects/${project.id}/tickets`,
+      headers: authHeader(owner.id),
+      payload: {
+        title: "Retry failed invoice webhooks",
+        priority: "HIGH",
+        stateId: inProgressState.id,
+        sprintId: sprint.id,
+        labelIds: [label.id],
+      },
+    });
+    expect(createRes.statusCode).toBe(201);
+    const ticket = createRes.json().data;
+    expect(ticket.stateId).toBe(inProgressState.id);
+    expect(ticket.sprintId).toBe(sprint.id);
+    expect(ticket.priority).toBe("HIGH");
+    expect(ticket.labels.map((l: { id: string }) => l.id)).toEqual([label.id]);
+  });
+
+  it("dedupes a labelIds payload that lists the same label twice", async () => {
+    const { owner, project } = await setupProject();
+
+    const labelRes = await app.inject({
+      method: "POST",
+      url: `/api/v1/projects/${project.id}/labels`,
+      headers: authHeader(owner.id),
+      payload: { name: "bug", color: "#ff0000" },
+    });
+    const label = labelRes.json().data;
+
+    const createRes = await app.inject({
+      method: "POST",
+      url: `/api/v1/projects/${project.id}/tickets`,
+      headers: authHeader(owner.id),
+      payload: { title: "Duplicate label ids", labelIds: [label.id, label.id] },
+    });
+    expect(createRes.statusCode).toBe(201);
+    expect(createRes.json().data.labels.map((l: { id: string }) => l.id)).toEqual([label.id]);
+  });
+
+  it("creates a ticket when sprintId and assigneeId are explicitly null", async () => {
+    const { owner, project } = await setupProject();
+
+    const createRes = await app.inject({
+      method: "POST",
+      url: `/api/v1/projects/${project.id}/tickets`,
+      headers: authHeader(owner.id),
+      payload: { title: "No sprint, unassigned", sprintId: null, assigneeId: null, description: null },
+    });
+    expect(createRes.statusCode).toBe(201);
+    const ticket = createRes.json().data;
+    expect(ticket.sprintId).toBeNull();
+    expect(ticket.assigneeId).toBeNull();
+  });
+
+  it("rejects a sprintId or labelId that belongs to a different project", async () => {
+    const { owner, project } = await setupProject();
+    const otherProject = await createProjectFixture((await createOrgWithOwner(owner.id, "Other Org")).id, owner.id, {
+      key: "OTH",
+    });
+
+    const sprintRes = await app.inject({
+      method: "POST",
+      url: `/api/v1/projects/${otherProject.id}/sprints`,
+      headers: authHeader(owner.id),
+      payload: { name: "Foreign Sprint", startDate: "2026-01-01T00:00:00Z", endDate: "2026-01-14T00:00:00Z" },
+    });
+    const foreignSprint = sprintRes.json().data;
+
+    const res = await app.inject({
+      method: "POST",
+      url: `/api/v1/projects/${project.id}/tickets`,
+      headers: authHeader(owner.id),
+      payload: { title: "Cross-project sprint", sprintId: foreignSprint.id },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error.code).toBe("VALIDATION_ERROR");
+  });
+
   it("second ticket in the same project gets number 2", async () => {
     const { owner, project } = await setupProject();
     await app.inject({

@@ -76,6 +76,17 @@ export interface CommentsPage {
   nextCursor: string | null;
 }
 
+export interface CreateTicketInput {
+  projectId: string;
+  title: string;
+  description?: string | null;
+  priority?: Priority;
+  stateId?: string;
+  assigneeId?: string | null;
+  sprintId?: string | null;
+  labelIds?: string[];
+}
+
 export interface TicketPatchInput {
   version: number;
   title?: string;

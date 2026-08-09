@@ -8,7 +8,13 @@ import {
   type TicketServiceDeps,
 } from "../../src/services/ticketService.js";
 import { EventBus } from "../../src/services/eventBus.js";
-import { ForbiddenError, IllegalTransitionError, NotFoundError, StaleStateError } from "../../src/errors/index.js";
+import {
+  ForbiddenError,
+  IllegalTransitionError,
+  NotFoundError,
+  StaleStateError,
+  ValidationError,
+} from "../../src/errors/index.js";
 import type { TicketRow } from "../../src/services/types.js";
 
 const PROJECT_ID = "proj-1";
@@ -75,7 +81,8 @@ function makeDeps(opts: { orgRole?: "OWNER" | "ADMIN" | "MEMBER" | "VIEWER"; tic
           priority: input.priority ?? "NONE",
           assigneeId: input.assigneeId ?? null,
           reporterId: input.reporterId,
-          stateId: defaultStateId,
+          stateId: input.stateId ?? defaultStateId,
+          sprintId: input.sprintId ?? null,
           projectId: input.projectId,
         });
         ticketsMap.set(ticket.id, ticket);
@@ -139,6 +146,23 @@ describe("createTicket", () => {
     const { deps } = makeDeps({ orgRole: "MEMBER" });
     deps.getProjectContext = async () => null;
     await expect(createTicket(actor, { projectId: "ghost", title: "x" }, deps)).rejects.toThrow(NotFoundError);
+  });
+
+  it("creates a ticket in an explicitly requested workflow state", async () => {
+    const { deps } = makeDeps({ orgRole: "MEMBER" });
+    const ticket = await createTicket(
+      actor,
+      { projectId: PROJECT_ID, title: "New ticket", stateId: IN_PROGRESS_STATE_ID },
+      deps,
+    );
+    expect(ticket.stateId).toBe(IN_PROGRESS_STATE_ID);
+  });
+
+  it("rejects a stateId that doesn't belong to the project's workflow", async () => {
+    const { deps } = makeDeps({ orgRole: "MEMBER" });
+    await expect(
+      createTicket(actor, { projectId: PROJECT_ID, title: "New ticket", stateId: "ghost-state" }, deps),
+    ).rejects.toThrow(ValidationError);
   });
 });
 

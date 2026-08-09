@@ -73,6 +73,22 @@ export const ticketRepository: TicketRepository = {
 
   async createTicket(input, defaultStateId) {
     return prisma.$transaction(async (tx) => {
+      if (input.sprintId) {
+        const sprint = await tx.sprint.findUnique({ where: { id: input.sprintId }, select: { projectId: true } });
+        if (!sprint || sprint.projectId !== input.projectId) {
+          throw new ValidationError("sprintId must belong to this ticket's project");
+        }
+      }
+      const labelIds = input.labelIds ? [...new Set(input.labelIds)] : undefined;
+      if (labelIds && labelIds.length > 0) {
+        const matchingCount = await tx.label.count({
+          where: { id: { in: labelIds }, projectId: input.projectId },
+        });
+        if (matchingCount !== labelIds.length) {
+          throw new ValidationError("labelIds must all belong to this ticket's project");
+        }
+      }
+
       const project = await tx.project.update({
         where: { id: input.projectId },
         data: { nextTicketNo: { increment: 1 } },
@@ -86,11 +102,18 @@ export const ticketRepository: TicketRepository = {
           title: input.title,
           description: input.description ?? null,
           priority: input.priority ?? "NONE",
-          stateId: defaultStateId,
+          stateId: input.stateId ?? defaultStateId,
           assigneeId: input.assigneeId ?? null,
           reporterId: input.reporterId,
+          sprintId: input.sprintId ?? null,
         },
       });
+
+      if (labelIds && labelIds.length > 0) {
+        await tx.ticketLabel.createMany({
+          data: labelIds.map((labelId) => ({ ticketId: ticket.id, labelId })),
+        });
+      }
 
       await tx.ticketEvent.create({
         data: {
@@ -101,7 +124,8 @@ export const ticketRepository: TicketRepository = {
         },
       });
 
-      return { ...ticket, labels: [] };
+      const created = await tx.ticket.findUniqueOrThrow({ where: { id: ticket.id }, include: TICKET_LABELS_INCLUDE });
+      return toTicketRow(created);
     });
   },
 

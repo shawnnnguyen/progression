@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { NewTicketModal } from "@/features/tickets/components/create/NewTicketModal";
 import { ProjectKeyBadge } from "./ProjectKeyBadge";
 import type { ProjectRow } from "../types";
 
@@ -33,15 +33,7 @@ export function ProjectTopbar({ project, view }: { project: ProjectRow; view: "b
           </button>
         ))}
       </div>
-      <Button
-        variant="default"
-        size="lg"
-        disabled
-        title="Ticket creation is coming soon"
-        className="ml-auto"
-      >
-        New ticket
-      </Button>
+      <NewTicketModal project={project} />
     </div>
   );
 }
