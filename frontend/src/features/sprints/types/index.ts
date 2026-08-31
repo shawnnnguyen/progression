@@ -10,3 +10,10 @@ export interface Sprint {
   status: SprintStatus;
   createdAt: string;
 }
+
+export interface CreateSprintInput {
+  name: string;
+  goal?: string;
+  startDate: string;
+  endDate: string;
+}

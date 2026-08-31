@@ -1,7 +1,7 @@
 import { useQueries } from "@tanstack/react-query";
 import { listSprints } from "../api/sprintsApi";
 
-/** Dashboard-only: fans out one cached sprints query per project id. */
+/** Fans out one cached sprints query per project id. */
 export function useSprintsByProjectIds(projectIds: string[]) {
   return useQueries({
     queries: projectIds.map((projectId) => ({

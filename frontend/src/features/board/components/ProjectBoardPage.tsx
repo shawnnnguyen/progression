@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { DndContext, DragOverlay, closestCenter } from "@dnd-kit/core";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -6,20 +7,35 @@ import { useProject } from "@/features/projects/hooks/useProject";
 import { useProjectMemberMap } from "@/features/projects/hooks/useProjectMembers";
 import { ProjectTopbar } from "@/features/projects/components/ProjectTopbar";
 import { useWorkflowStates } from "@/features/workflow/hooks/useWorkflowStates";
+import { useSprints } from "@/features/sprints/hooks/useSprints";
+import { useLabels } from "@/features/labels/hooks/useLabels";
 import { useProjectTickets } from "@/features/tickets/hooks/useProjectTickets";
 import { TicketCard } from "@/features/tickets/components/TicketCard";
 import { TicketDetailSheet } from "@/features/tickets/components/TicketDetailSheet";
-import type { TicketRow } from "@/features/tickets/types";
+import { TicketFilterBar } from "@/features/list/components/TicketFilterBar";
+import { sortTickets, type SortOption } from "@/features/list/lib/sortTickets";
+import type { TicketFilters, TicketRow } from "@/features/tickets/types";
 import { useBoardDragAndDrop } from "../hooks/useBoardDragAndDrop";
 import { BoardColumns } from "./BoardColumns";
 
 export function ProjectBoardPage({ projectId }: { projectId: string }) {
-  const projectQuery = useProject(projectId);
-  const statesQuery = useWorkflowStates(projectId);
-  const ticketsQuery = useProjectTickets(projectId, {});
-  const { memberMap } = useProjectMemberMap(projectId);
   const [searchParams, setSearchParams] = useSearchParams();
   const openTicketNumber = searchParams.get("ticket");
+
+  // The `sprint` URL param only seeds the initial filter (e.g. arriving via a sprint
+  // card's link) — from here on filtering is local state, same as the list view.
+  const [filters, setFilters] = useState<TicketFilters>(() => {
+    const sprint = searchParams.get("sprint");
+    return sprint ? { sprint } : {};
+  });
+  const [sort, setSort] = useState<SortOption>("default");
+
+  const projectQuery = useProject(projectId);
+  const statesQuery = useWorkflowStates(projectId);
+  const ticketsQuery = useProjectTickets(projectId, filters);
+  const { memberMap, data: members } = useProjectMemberMap(projectId);
+  const { data: labels } = useLabels(projectId);
+  const { data: sprints } = useSprints(projectId);
 
   function openTicket(ticket: TicketRow) {
     setSearchParams((prev) => {
@@ -37,6 +53,11 @@ export function ProjectBoardPage({ projectId }: { projectId: string }) {
     });
   }
 
+  const sortedTickets = useMemo(
+    () => sortTickets(ticketsQuery.data?.tickets ?? [], sort),
+    [ticketsQuery.data, sort],
+  );
+
   const {
     sensors,
     activeTicket,
@@ -46,7 +67,7 @@ export function ProjectBoardPage({ projectId }: { projectId: string }) {
     onDragStart,
     onDragEnd,
     onDragCancel,
-  } = useBoardDragAndDrop(projectId, ticketsQuery.data?.tickets ?? [], statesQuery.data ?? []);
+  } = useBoardDragAndDrop(projectId, sortedTickets, statesQuery.data ?? []);
 
   if (projectQuery.isLoading || statesQuery.isLoading || ticketsQuery.isLoading) {
     return (
@@ -85,7 +106,17 @@ export function ProjectBoardPage({ projectId }: { projectId: string }) {
   return (
     <div className="flex h-full flex-col">
       <ProjectTopbar project={projectQuery.data} view="board" />
-      <div className="flex-1 overflow-x-auto p-6">
+      <TicketFilterBar
+        filters={filters}
+        onFiltersChange={setFilters}
+        states={statesQuery.data}
+        members={members ?? []}
+        labels={labels ?? []}
+        sprints={sprints ?? []}
+        sort={sort}
+        onSortChange={setSort}
+      />
+      <div className="flex-1 overflow-x-auto py-6 pl-6">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -95,8 +126,9 @@ export function ProjectBoardPage({ projectId }: { projectId: string }) {
           onDragCancel={onDragCancel}
         >
           <BoardColumns
+            project={projectQuery.data}
             states={statesQuery.data}
-            tickets={ticketsQuery.data.tickets}
+            tickets={sortedTickets}
             memberMap={memberMap}
             activeTicketId={activeTicket?.id}
             legalStateIds={legalStateIds}
@@ -104,16 +136,6 @@ export function ProjectBoardPage({ projectId }: { projectId: string }) {
             projectKey={projectQuery.data.key}
             onOpenTicket={openTicket}
           />
-          {/*
-            Default drop animation is disabled: it animates the overlay back
-            toward the dragged card's pre-drop position, which — since the
-            optimistic cache patch lands on a later microtask than the drop
-            itself — is still the OLD column at that instant. Without this,
-            the overlay visibly snaps back to the old column and lingers
-            there before disappearing, right as the real card jumps to the
-            new one. Disabling it makes the overlay vanish the instant the
-            drop happens instead.
-          */}
           <DragOverlay dropAnimation={null}>
             {activeTicket && (
               <TicketCard

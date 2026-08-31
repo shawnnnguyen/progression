@@ -9,3 +9,10 @@ export function fieldTriggerClassName(compact: boolean | undefined, className?: 
 }
 
 export const FIELD_LABEL_CLASSNAME = "text-xs text-[var(--color-neutral-500)]";
+
+export function fieldInputClassName(className?: string) {
+  return cn(
+    "w-full rounded-md border border-[var(--color-divider)] bg-[var(--color-bg)] px-2 py-1.5 text-sm text-[var(--color-text)] outline-none placeholder:text-[var(--color-neutral-500)] focus:border-[var(--color-neutral-400)]",
+    className,
+  );
+}
