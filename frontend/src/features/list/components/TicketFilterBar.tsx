@@ -51,7 +51,7 @@ function SearchInput({
         timeoutRef.current = setTimeout(() => onFiltersChange((prev) => setFilter(prev, "q", next)), 300);
       }}
       placeholder="Search tickets…"
-      className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+      className="h-7 rounded-md border border-input bg-background px-2 text-xs"
       aria-label="Search tickets"
     />
   );
@@ -74,7 +74,7 @@ export function TicketFilterBar({
   const hasActiveFilters = Object.keys(filters).length > 0;
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-border px-6 py-3.5">
+    <div className="flex flex-wrap items-center gap-1.5 border-b border-border px-4 py-2">
       <TicketFilterField
         label="State"
         ariaLabel="Filter by state"
@@ -116,7 +116,7 @@ export function TicketFilterBar({
         <button
           type="button"
           onClick={() => onFiltersChange({})}
-          className="text-sm font-medium text-primary outline-none hover:underline underline-offset-4"
+          className="text-xs font-medium text-primary outline-none hover:underline underline-offset-4"
         >
           Clear all
         </button>

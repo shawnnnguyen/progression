@@ -38,9 +38,9 @@ export function TicketFilterField({
         <DropdownMenuTrigger
           aria-label={ariaLabel}
           className={cn(
-            "flex h-9 items-center gap-1.5 rounded-md border px-3 text-sm font-medium outline-none transition-colors",
+            "flex h-7 items-center gap-1 rounded-md border px-2 text-xs font-medium outline-none transition-colors",
             isActive
-              ? "border-primary/40 bg-primary/10 pr-7 text-primary hover:bg-primary/15 data-popup-open:bg-primary/15"
+              ? "border-primary/40 bg-primary/10 pr-6 text-primary hover:bg-primary/15 data-popup-open:bg-primary/15"
               : "border-border bg-background text-foreground/80 hover:bg-muted data-popup-open:bg-muted",
           )}
         >
@@ -51,7 +51,7 @@ export function TicketFilterField({
           ) : (
             <>
               {label}
-              <ChevronDownIcon className="size-3.5 shrink-0 text-muted-foreground" />
+              <ChevronDownIcon className="size-3 shrink-0 text-muted-foreground" />
             </>
           )}
         </DropdownMenuTrigger>
@@ -71,9 +71,9 @@ export function TicketFilterField({
           type="button"
           onClick={() => onChange("")}
           aria-label={`Clear ${label} filter`}
-          className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-primary outline-none hover:bg-primary/20"
+          className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-primary outline-none hover:bg-primary/20"
         >
-          <XIcon className="size-3.5" />
+          <XIcon className="size-3" />
         </button>
       )}
     </div>
