@@ -8,25 +8,27 @@ export function ActiveProjectCard({ project }: { project: ProjectRow }) {
   const progress = summary.total > 0 ? Math.round((summary.doneCount / summary.total) * 100) : 0;
 
   return (
-    <Card className="gap-2 p-3">
+    <Card className="gap-1.5 p-2.5">
       <CardHeader className="p-0">
-        <CardTitle className="flex items-center gap-2 text-sm">
-          <ProjectKeyBadge projectKey={project.key} />
-          {project.name}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-1 p-0 text-xs text-muted-foreground">
-        {summary.isLoading ? (
-          <span>Loading…</span>
-        ) : (
-          <>
-            <span>
+        <CardTitle className="flex items-center justify-between gap-2 text-sm">
+          <span className="flex items-center gap-2">
+            <ProjectKeyBadge projectKey={project.key} />
+            {project.name}
+          </span>
+          {!summary.isLoading && (
+            <span className="text-xs font-normal text-muted-foreground">
               {summary.openCount} open{summary.isCapped ? " (approx.)" : ""}
             </span>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-              <div className="h-full bg-primary" style={{ width: `${progress}%` }} />
-            </div>
-          </>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        {summary.isLoading ? (
+          <span className="text-xs text-muted-foreground">Loading…</span>
+        ) : (
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div className="h-full bg-primary" style={{ width: `${progress}%` }} />
+          </div>
         )}
       </CardContent>
     </Card>

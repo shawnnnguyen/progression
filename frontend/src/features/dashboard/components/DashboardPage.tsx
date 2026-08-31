@@ -9,6 +9,7 @@ import { useSprintsByProjectIds } from "@/features/sprints/hooks/useSprintsByPro
 import type { WorkflowState } from "@/features/workflow/types";
 import type { Sprint } from "@/features/sprints/types";
 import { MyIssuesPanel } from "./MyIssuesPanel";
+import { MyIssuesTopbar } from "./MyIssuesTopbar";
 import { DashboardRightRail } from "./DashboardRightRail";
 
 export function DashboardPage() {
@@ -66,15 +67,22 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="grid grid-cols-[1fr_320px] gap-6 p-6">
-      <MyIssuesPanel
-        tickets={tickets}
-        stateById={stateById}
-        projectKeyById={projectKeyById}
-        sprintById={sprintById}
-        isCapped={myTicketsQuery.data?.isCapped ?? false}
-      />
-      <DashboardRightRail projects={orgProjectsQuery.data ?? []} />
+    <div className="flex h-full flex-col">
+      <MyIssuesTopbar />
+      <div className="flex min-h-0 flex-1">
+        <div className="flex-1 overflow-y-auto p-6">
+          <MyIssuesPanel
+            tickets={tickets}
+            stateById={stateById}
+            projectKeyById={projectKeyById}
+            sprintById={sprintById}
+            isCapped={myTicketsQuery.data?.isCapped ?? false}
+          />
+        </div>
+        <div className="w-80 shrink-0 overflow-y-auto border-l border-border p-6">
+          <DashboardRightRail projects={orgProjectsQuery.data ?? []} />
+        </div>
+      </div>
     </div>
   );
 }

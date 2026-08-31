@@ -1,9 +1,10 @@
-import type { EffectiveProjectMember } from "@/features/projects/types";
+import type { EffectiveProjectMember, ProjectRow } from "@/features/projects/types";
 import type { TicketRow } from "@/features/tickets/types";
 import type { WorkflowState } from "@/features/workflow/types";
 import { WorkflowColumn } from "./WorkflowColumn";
 
 export function BoardColumns({
+  project,
   states,
   tickets,
   memberMap,
@@ -13,6 +14,7 @@ export function BoardColumns({
   projectKey,
   onOpenTicket,
 }: {
+  project: ProjectRow;
   states: WorkflowState[];
   tickets: TicketRow[];
   memberMap: Map<string, EffectiveProjectMember>;
@@ -27,6 +29,7 @@ export function BoardColumns({
       {states.map((state) => (
         <WorkflowColumn
           key={state.id}
+          project={project}
           state={state}
           tickets={tickets.filter((ticket) => ticket.stateId === state.id)}
           memberMap={memberMap}
@@ -37,6 +40,7 @@ export function BoardColumns({
           onOpenTicket={onOpenTicket}
         />
       ))}
+      <div className="w-2 shrink-0" aria-hidden="true" />
     </div>
   );
 }

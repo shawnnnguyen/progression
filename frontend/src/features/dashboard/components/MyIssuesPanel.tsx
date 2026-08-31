@@ -32,7 +32,6 @@ export function MyIssuesPanel({
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-lg font-semibold">My Issues</h1>
       {groups.length === 0 ? (
         <p className="text-sm text-muted-foreground">No tickets assigned to you</p>
       ) : (

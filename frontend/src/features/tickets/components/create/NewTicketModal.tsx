@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type ReactElement, type ReactNode } from "react";
 import { Dialog, DialogClose, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useWorkflowStates } from "@/features/workflow/hooks/useWorkflowStates";
@@ -24,12 +24,12 @@ interface Draft {
   sprintId: string | null;
 }
 
-function emptyDraft(project: ProjectRow): Draft {
+function emptyDraft(project: ProjectRow, initialStateId?: string): Draft {
   return {
     project,
     title: "",
     description: "",
-    stateId: undefined,
+    stateId: initialStateId,
     priority: "NONE",
     assigneeId: null,
     labelIds: [],
@@ -37,16 +37,24 @@ function emptyDraft(project: ProjectRow): Draft {
   };
 }
 
-export function NewTicketModal({ project }: { project: ProjectRow }) {
+export function NewTicketModal({
+  project,
+  initialStateId,
+  triggerRender,
+  triggerChildren,
+}: {
+  project: ProjectRow;
+  initialStateId?: string;
+  triggerRender?: ReactElement;
+  triggerChildren?: ReactNode;
+}) {
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState<Draft>(() => emptyDraft(project));
+  const [draft, setDraft] = useState<Draft>(() => emptyDraft(project, initialStateId));
 
   const statesQuery = useWorkflowStates(draft.project.id);
   const sprintsQuery = useSprints(draft.project.id);
   const createTicket = useCreateTicket();
 
-  // Seed the default state and active sprint once their project-scoped
-  // queries land — covers both initial open and switching projects.
   useEffect(() => {
     if (draft.stateId === undefined && statesQuery.data) {
       const defaultState = statesQuery.data.find((s) => s.isDefault);
@@ -59,16 +67,12 @@ export function NewTicketModal({ project }: { project: ProjectRow }) {
       const activeSprint = sprintsQuery.data.find((s) => s.status === "ACTIVE");
       if (activeSprint) setDraft((d) => (d.sprintId === null ? { ...d, sprintId: activeSprint.id } : d));
     }
-    // Deliberately excludes draft.sprintId — only seed once per project, since
-    // re-running on every sprint list change would stomp a user's explicit
-    // "No sprint" choice once the query refetches.
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [draft.project.id, sprintsQuery.data]);
 
   function handleOpenChange(next: boolean) {
     setOpen(next);
     if (!next) {
-      setDraft(emptyDraft(project));
+      setDraft(emptyDraft(project, initialStateId));
     }
   }
 
@@ -102,8 +106,10 @@ export function NewTicketModal({ project }: { project: ProjectRow }) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger render={<Button variant="default" size="lg" className="ml-auto" />}>New ticket</DialogTrigger>
-      <DialogContent className="max-w-xl gap-0 p-0">
+      <DialogTrigger render={triggerRender ?? <Button variant="default" size="lg" className="ml-auto" />}>
+        {triggerRender ? triggerChildren : "New ticket"}
+      </DialogTrigger>
+      <DialogContent className="max-w-xl gap-0 border border-[var(--color-neutral-400)] p-0">
         <form onSubmit={handleSubmit} className="flex flex-col">
           <div className="flex items-center gap-2 border-b border-[var(--color-divider)] px-4 py-3">
             <NewTicketProjectPicker orgId={project.orgId} value={draft.project} onChange={handleProjectChange} />

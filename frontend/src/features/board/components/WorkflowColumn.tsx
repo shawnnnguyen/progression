@@ -3,13 +3,16 @@ import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Plus } from "lucide-react";
 import { StateDot } from "@/components/domain/StateDot";
+import { NewTicketModal } from "@/features/tickets/components/create/NewTicketModal";
 import { DraggableTicketCard } from "./DraggableTicketCard";
 import { cn } from "@/lib/utils";
 import type { EffectiveProjectMember } from "@/features/projects/types";
+import type { ProjectRow } from "@/features/projects/types";
 import type { TicketRow } from "@/features/tickets/types";
 import type { WorkflowState } from "@/features/workflow/types";
 
 export function WorkflowColumn({
+  project,
   state,
   tickets,
   memberMap,
@@ -19,6 +22,7 @@ export function WorkflowColumn({
   projectKey,
   onOpenTicket,
 }: {
+  project: ProjectRow;
   state: WorkflowState;
   tickets: TicketRow[];
   memberMap: Map<string, EffectiveProjectMember>;
@@ -40,14 +44,18 @@ export function WorkflowColumn({
         <StateDot category={state.category} />
         <h2 className="text-sm font-semibold">{state.name}</h2>
         <span className="ml-auto text-xs text-muted-foreground">{tickets.length}</span>
-        <button
-          type="button"
-          disabled
-          title="Ticket creation is coming soon"
-          className="flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
-        >
-          <Plus className="size-3.5" />
-        </button>
+        <NewTicketModal
+          project={project}
+          initialStateId={state.id}
+          triggerRender={
+            <button
+              type="button"
+              title="New ticket"
+              className="flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+            />
+          }
+          triggerChildren={<Plus className="size-3.5" />}
+        />
       </div>
       <div
         ref={setNodeRef}
