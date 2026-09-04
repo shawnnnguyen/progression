@@ -8,7 +8,10 @@ export function useCreateOrg() {
   return useMutation({
     mutationFn: (input: { name: string; slug?: string }) => createOrg(input).then((res) => res.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orgs"] });
+      // Awaited (returned) so callers navigating on success — e.g. the onboarding
+      // wizard, straight to /dashboard — don't race RequireOrgLayout reading a
+      // stale, still-empty ["orgs"] cache and bouncing back to /onboarding.
+      return queryClient.invalidateQueries({ queryKey: ["orgs"] });
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : "Failed to create organization");

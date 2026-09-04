@@ -3,6 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentOrg } from "@/features/orgs/hooks/useCurrentOrg";
 import { useOrgProjects } from "@/features/projects/hooks/useOrgProjects";
 import { useProjectsByIds } from "@/features/projects/hooks/useProjectsByIds";
+import { EmptyProjectsScreen } from "@/features/projects/components/EmptyProjectsScreen";
 import { useMyTickets } from "@/features/tickets/hooks/useMyTickets";
 import { useWorkflowStatesByProjectIds } from "@/features/workflow/hooks/useWorkflowStatesByProjectIds";
 import { useSprintsByProjectIds } from "@/features/sprints/hooks/useSprintsByProjectIds";
@@ -49,6 +50,10 @@ export function DashboardPage() {
         Something went wrong loading your dashboard.
       </div>
     );
+  }
+
+  if ((orgProjectsQuery.data ?? []).length === 0) {
+    return <EmptyProjectsScreen />;
   }
 
   const stateById = new Map<string, WorkflowState>();

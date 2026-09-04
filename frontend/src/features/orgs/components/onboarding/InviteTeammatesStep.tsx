@@ -8,7 +8,6 @@ import { useInvites } from "../../hooks/useInvites";
 import { useRevokeInvite } from "../../hooks/useRevokeInvite";
 import { formatInviteExpiry } from "../../lib/formatInviteExpiry";
 import type { OrgRole } from "../../types";
-import { OnboardingStepIndicator } from "./OnboardingStepIndicator";
 import { RoleSelect } from "./RoleSelect";
 
 interface DraftRow {
@@ -54,12 +53,7 @@ export function InviteTeammatesStep({
 
   return (
     <div className="w-full max-w-md">
-      <OnboardingStepIndicator step={3} />
-
-      <h1 className="mt-4 text-2xl font-semibold text-foreground">Invite your teammates</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Org roles apply everywhere. Project-level overrides come later.</p>
-
-      <div className="mt-6 flex flex-col gap-2">
+      <div className="flex flex-col gap-2">
         {rows.map((row) => (
           <div key={row.id} className="flex gap-2">
             <Input
@@ -112,7 +106,7 @@ export function InviteTeammatesStep({
 
       <div className="mt-6 flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={onComplete}>
-          Skip for now
+          Close
         </Button>
         <Button type="button" onClick={handleSend} disabled={filledRows.length === 0 || sendInvites.isPending}>
           {sendInvites.isPending

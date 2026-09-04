@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreateOrg } from "../../hooks/useCreateOrg";
 import { slugify } from "../../lib/slugify";
-import { OnboardingStepIndicator } from "./OnboardingStepIndicator";
 
 export function CreateOrgStep({ onCreated }: { onCreated: (orgId: string) => void }) {
   const [name, setName] = useState("");
@@ -24,9 +23,7 @@ export function CreateOrgStep({ onCreated }: { onCreated: (orgId: string) => voi
 
   return (
     <div className="w-full max-w-sm">
-      <OnboardingStepIndicator step={1} />
-
-      <h1 className="mt-4 text-2xl font-semibold text-foreground">Create your organization</h1>
+      <h1 className="text-2xl font-semibold text-foreground">Create your organization</h1>
       <p className="mt-1 text-sm text-muted-foreground">You can belong to more than one — switch any time from the sidebar.</p>
 
       <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit}>
