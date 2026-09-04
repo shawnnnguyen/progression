@@ -18,7 +18,7 @@ async function rawFetch(path: string, init?: RequestInit): Promise<Response> {
     ...init,
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
+      ...(init?.body ? { "Content-Type": "application/json" } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...init?.headers,
     },

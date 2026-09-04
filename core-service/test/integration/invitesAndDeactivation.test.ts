@@ -39,7 +39,7 @@ describe("invite accept requires the token and a matching email", () => {
 
     const acceptRes = await app.inject({
       method: "POST",
-      url: `/api/v1/orgs/${org.id}/invites/${invite.id}/accept`,
+      url: `/api/v1/invites/${invite.id}/accept`,
       headers: authHeader(invitee.id),
       payload: { token },
     });
@@ -62,7 +62,7 @@ describe("invite accept requires the token and a matching email", () => {
 
     const acceptRes = await app.inject({
       method: "POST",
-      url: `/api/v1/orgs/${org.id}/invites/${invite.id}/accept`,
+      url: `/api/v1/invites/${invite.id}/accept`,
       headers: authHeader(invitee.id),
       payload: { token: "wrong-token" },
     });
@@ -95,7 +95,7 @@ describe("invite accept requires the token and a matching email", () => {
     // check must block her.
     const acceptRes = await app.inject({
       method: "POST",
-      url: `/api/v1/orgs/${org.id}/invites/${invite.id}/accept`,
+      url: `/api/v1/invites/${invite.id}/accept`,
       headers: authHeader(mallory.id),
       payload: { token },
     });
@@ -118,7 +118,7 @@ describe("invite accept requires the token and a matching email", () => {
 
     const acceptRes = await app.inject({
       method: "POST",
-      url: `/api/v1/orgs/${org.id}/invites/${invite.id}/accept`,
+      url: `/api/v1/invites/${invite.id}/accept`,
       headers: authHeader(owner.id),
       payload: { token },
     });

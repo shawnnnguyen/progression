@@ -17,3 +17,23 @@ export interface OrgMember {
   name: string;
   avatarUrl: string | null;
 }
+
+export interface Membership {
+  id: string;
+  userId: string;
+  orgId: string;
+  role: OrgRole;
+  createdAt: string;
+}
+
+export interface Invite {
+  id: string;
+  orgId: string;
+  email: string;
+  role: OrgRole;
+  invitedById: string;
+  expiresAt: string;
+  acceptedAt: string | null;
+  revokedAt: string | null;
+  createdAt: string;
+}

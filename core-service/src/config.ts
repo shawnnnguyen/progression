@@ -27,4 +27,8 @@ export const config = {
     refreshTtlMs: parseDurationMs(process.env.REFRESH_TOKEN_TTL ?? "30d"),
   },
   replicaCount: Number(process.env.REPLICA_COUNT ?? 1),
+  resend:
+    process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL
+      ? { apiKey: process.env.RESEND_API_KEY, from: process.env.RESEND_FROM_EMAIL }
+      : null,
 };

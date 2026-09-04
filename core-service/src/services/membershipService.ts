@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { ConflictError, ForbiddenError, LastOwnerError, NotFoundError, ValidationError } from "../errors/index.js";
 import { can, type Actor, type AuthzDeps, type OrgRole } from "./authz.js";
+import type { Mailer } from "./mailer.js";
 import type { AuditEventRow, InviteRow, MembershipRow, OrgMemberRow, OrganizationRow, Page } from "./types.js";
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -61,6 +62,8 @@ export interface MembershipServiceDeps extends AuthzDeps {
   auditLog: AuditEventRepository;
   users: UserDeactivationRepository;
   refreshTokens: RefreshTokenRevocationRepository;
+  mailer: Mailer;
+  webOrigin: string;
 }
 
 export async function createOrg(actor: Actor, name: string, slug: string, deps: MembershipServiceDeps): Promise<OrganizationRow> {
@@ -109,6 +112,17 @@ export async function inviteMember(
   const expiresAt = new Date(Date.now() + INVITE_TTL_MS);
 
   const invite = await deps.invites.createInvite(orgId, email, role, actor.userId, tokenHash, expiresAt);
+
+  // Best-effort: the invite row is the source of truth (visible/revocable
+  // regardless), so a mailer failure shouldn't fail the whole request.
+  try {
+    const org = await deps.orgs.findOrgById(orgId);
+    const acceptUrl = `${deps.webOrigin}/invites/${invite.id}/accept?token=${plaintextToken}`;
+    await deps.mailer.sendInviteEmail(email, { orgName: org?.name ?? "your team", role, acceptUrl });
+  } catch (error) {
+    console.error(`Failed to send invite email for invite ${invite.id}:`, error);
+  }
+
   return { invite, plaintextToken };
 }
 

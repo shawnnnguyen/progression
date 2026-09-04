@@ -1,8 +1,15 @@
 import { apiFetch } from "@/lib/api";
-import type { EffectiveProjectMember, ProjectRow } from "../types";
+import type { EffectiveProjectMember, ProjectRow, ProjectVisibility } from "../types";
 
 export function listOrgProjects(orgId: string) {
   return apiFetch<{ data: ProjectRow[] }>(`/orgs/${orgId}/projects`);
+}
+
+export function createProject(orgId: string, input: { key: string; name: string; visibility?: ProjectVisibility }) {
+  return apiFetch<{ data: ProjectRow }>(`/orgs/${orgId}/projects`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
 export function getProject(projectId: string) {

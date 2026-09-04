@@ -89,7 +89,7 @@ export default async function orgsRoutes(app: FastifyInstance) {
   });
 
   app.post(
-    "/orgs/:orgId/invites/:inviteId/accept",
+    "/invites/:inviteId/accept",
     {
       schema: {
         body: { type: "object", required: ["token"], properties: { token: { type: "string", minLength: 1 } } },

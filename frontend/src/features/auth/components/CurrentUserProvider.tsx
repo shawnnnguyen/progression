@@ -1,17 +1,17 @@
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Navigate, useLocation } from "react-router-dom";
 import { getMe } from "../api/authApi";
-import { devAutoLogin } from "../lib/devAutoLogin";
 import { CurrentUserContext } from "../context/current-user-context";
 import type { User } from "../types";
 
 async function fetchCurrentUser(): Promise<User> {
-  await devAutoLogin();
   const { data } = await getMe();
   return data;
 }
 
 export function CurrentUserProvider({ children }: { children: ReactNode }) {
+  const location = useLocation();
   const query = useQuery({
     queryKey: ["me"],
     queryFn: fetchCurrentUser,
@@ -27,11 +27,7 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
   }
 
   if (query.isError || !query.data) {
-    return (
-      <div className="flex min-h-svh items-center justify-center text-muted-foreground">
-        Sign in required
-      </div>
-    );
+    return <Navigate to="/login" replace state={{ from: `${location.pathname}${location.search}` }} />;
   }
 
   return (

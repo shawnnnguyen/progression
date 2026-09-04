@@ -1,5 +1,6 @@
 import { config } from "./config.js";
 import { EventBus } from "./services/eventBus.js";
+import { createMailer } from "./services/mailer.js";
 import type { AuthServiceDeps } from "./services/authService.js";
 import type { MembershipServiceDeps } from "./services/membershipService.js";
 import type { ProjectServiceDeps } from "./services/projectService.js";
@@ -24,6 +25,7 @@ import { userRepository } from "./repositories/userRepository.js";
 import { refreshTokenRepository } from "./repositories/refreshTokenRepository.js";
 
 export const eventBus = new EventBus();
+export const mailer = createMailer(config);
 
 export const membershipDeps: MembershipServiceDeps = {
   ...authzRepository,
@@ -33,6 +35,8 @@ export const membershipDeps: MembershipServiceDeps = {
   auditLog: auditEventRepository,
   users: userRepository,
   refreshTokens: refreshTokenRepository,
+  mailer,
+  webOrigin: config.webOrigin,
 };
 
 export const projectDeps: ProjectServiceDeps = {
