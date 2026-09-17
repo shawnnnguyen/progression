@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useProject } from "@/features/projects/hooks/useProject";
+import { useRealtimeSubscription } from "@/lib/realtime/useRealtimeSubscription";
 import { useSprints } from "../hooks/useSprints";
 import { SprintsTopbar } from "./SprintsTopbar";
 import { SprintCard } from "./SprintCard";
@@ -18,6 +19,7 @@ function sortSprints(sprints: Sprint[]): Sprint[] {
 }
 
 export function SprintsPage({ projectId }: { projectId: string }) {
+  useRealtimeSubscription(projectId);
   const projectQuery = useProject(projectId);
   const sprintsQuery = useSprints(projectId);
 

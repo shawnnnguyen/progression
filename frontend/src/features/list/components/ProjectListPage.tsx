@@ -11,11 +11,13 @@ import { useLabels } from "@/features/labels/hooks/useLabels";
 import { useProjectTickets } from "@/features/tickets/hooks/useProjectTickets";
 import { TicketDetailSheet } from "@/features/tickets/components/TicketDetailSheet";
 import type { TicketFilters, TicketRow } from "@/features/tickets/types";
+import { useRealtimeSubscription } from "@/lib/realtime/useRealtimeSubscription";
 import { TicketFilterBar } from "./TicketFilterBar";
 import { TicketTable } from "./TicketTable";
 import { sortTickets, type SortOption } from "../lib/sortTickets";
 
 export function ProjectListPage({ projectId }: { projectId: string }) {
+  useRealtimeSubscription(projectId);
   const [filters, setFilters] = useState<TicketFilters>({});
   const [sort, setSort] = useState<SortOption>("default");
   const [searchParams, setSearchParams] = useSearchParams();

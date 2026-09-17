@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Navigate, useLocation } from "react-router-dom";
+import { RealtimeProvider } from "@/lib/realtime/RealtimeProvider";
 import { getMe } from "../api/authApi";
 import { CurrentUserContext } from "../context/current-user-context";
 import type { User } from "../types";
@@ -34,7 +35,7 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
     <CurrentUserContext.Provider
       value={{ user: query.data, isLoading: false, isError: false, error: null }}
     >
-      {children}
+      <RealtimeProvider>{children}</RealtimeProvider>
     </CurrentUserContext.Provider>
   );
 }

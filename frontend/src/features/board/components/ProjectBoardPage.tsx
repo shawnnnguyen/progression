@@ -15,15 +15,15 @@ import { TicketDetailSheet } from "@/features/tickets/components/TicketDetailShe
 import { TicketFilterBar } from "@/features/list/components/TicketFilterBar";
 import { sortTickets, type SortOption } from "@/features/list/lib/sortTickets";
 import type { TicketFilters, TicketRow } from "@/features/tickets/types";
+import { useRealtimeSubscription } from "@/lib/realtime/useRealtimeSubscription";
 import { useBoardDragAndDrop } from "../hooks/useBoardDragAndDrop";
 import { BoardColumns } from "./BoardColumns";
 
 export function ProjectBoardPage({ projectId }: { projectId: string }) {
+  useRealtimeSubscription(projectId);
   const [searchParams, setSearchParams] = useSearchParams();
   const openTicketNumber = searchParams.get("ticket");
 
-  // The `sprint` URL param only seeds the initial filter (e.g. arriving via a sprint
-  // card's link) — from here on filtering is local state, same as the list view.
   const [filters, setFilters] = useState<TicketFilters>(() => {
     const sprint = searchParams.get("sprint");
     return sprint ? { sprint } : {};

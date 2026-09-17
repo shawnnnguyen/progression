@@ -1,12 +1,14 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useProject } from "@/features/projects/hooks/useProject";
+import { useRealtimeSubscription } from "@/lib/realtime/useRealtimeSubscription";
 import { useTicket } from "../hooks/useTicket";
 import { TicketDetailContent } from "./TicketDetailContent";
 import { TicketDetailRail } from "./TicketDetailRail";
 import { TicketDetailTopbar } from "./TicketDetailTopbar";
 
 export function TicketDetailPage({ projectId, ticketNumber }: { projectId: string; ticketNumber: number }) {
+  useRealtimeSubscription(projectId);
   const projectQuery = useProject(projectId);
   const ticketQuery = useTicket(projectId, ticketNumber);
 
