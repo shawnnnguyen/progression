@@ -1,10 +1,3 @@
-// Canonical error-code table (BACKEND_PLAN.md §2 "Error handling"). This is
-// the single source of truth for every code any endpoint can return — every
-// other layer references this instead of inventing its own status/shape.
-//
-// INVALID_EXCHANGE and RATE_LIMITED (service-token-exchange only) are left
-// out here since the service-auth flow is deferred; they can be added back
-// alongside that work without touching any other code in this table.
 export const ErrorCode = {
   VALIDATION_ERROR: "VALIDATION_ERROR",
   UNAUTHORIZED: "UNAUTHORIZED",

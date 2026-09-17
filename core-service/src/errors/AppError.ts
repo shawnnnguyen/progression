@@ -1,4 +1,4 @@
-import { ErrorCode, HTTP_STATUS_BY_CODE, type ErrorCodeValue } from "./codes.js";
+import { ErrorCode, HTTP_STATUS_BY_CODE, type ErrorCodeValue } from "./errorCodes.js";
 
 export class AppError extends Error {
   readonly code: ErrorCodeValue;

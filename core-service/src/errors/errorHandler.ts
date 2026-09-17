@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { AppError, InternalError } from "./AppError.js";
-import { ErrorCode } from "./codes.js";
+import { ErrorCode } from "./errorCodes.js";
 
 interface ErrorBody {
   error: {
@@ -14,9 +14,6 @@ function send(reply: FastifyReply, httpStatus: number, body: ErrorBody) {
   return reply.code(httpStatus).send(body);
 }
 
-// The one Fastify setErrorHandler (BACKEND_PLAN.md §2). Route handlers never
-// write their own reply.code(...).send(...) for an error case — they throw
-// an AppError subclass and let this collapse it to { error: {...} }.
 export function registerErrorHandler(app: FastifyInstance): void {
   app.setErrorHandler((err: unknown, request: FastifyRequest, reply: FastifyReply) => {
     if (err instanceof AppError) {
@@ -25,8 +22,6 @@ export function registerErrorHandler(app: FastifyInstance): void {
       });
     }
 
-    // Fastify JSON-Schema validation failures surface as FastifyError with a
-    // `validation` array attached — map to 400 VALIDATION_ERROR uniformly.
     const maybeFastifyError = err as { validation?: unknown; message?: string };
     if (maybeFastifyError && maybeFastifyError.validation) {
       return send(reply, 400, {
@@ -37,9 +32,6 @@ export function registerErrorHandler(app: FastifyInstance): void {
       });
     }
 
-    // Anything else (a bug, an unhandled Prisma error) is logged with full
-    // detail server-side and collapsed to a generic response — a raw stack
-    // trace or constraint-violation message never reaches the client.
     request.log.error({ err }, "unhandled error");
     const internal = new InternalError();
     return send(reply, internal.httpStatus, {
