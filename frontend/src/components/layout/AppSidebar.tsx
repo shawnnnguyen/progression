@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
-import { ChevronRight, FolderKanban, LayoutDashboard, Rocket } from "lucide-react";
+import { IconChevronRight, IconLayoutKanban, IconLayoutDashboard, IconRocket } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { OrgSwitcher } from "@/features/orgs/components/OrgSwitcher";
 import { SidebarNavItem } from "./SidebarNavItem";
@@ -17,7 +17,7 @@ export function AppSidebar() {
     <aside className="flex w-64 shrink-0 flex-col gap-4 border-r border-sidebar-border bg-sidebar p-3 text-sidebar-foreground">
       <OrgSwitcher />
       <nav className="flex flex-col gap-0.5">
-        <SidebarNavItem to="/dashboard" icon={LayoutDashboard} label="My Issues" />
+        <SidebarNavItem to="/dashboard" icon={IconLayoutDashboard} label="My Issues" />
       </nav>
       <div className="flex flex-col gap-1">
         <button
@@ -26,10 +26,10 @@ export function AppSidebar() {
           aria-expanded={isSprintsOpen}
           className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         >
-          <Rocket className="size-4 shrink-0" />
+          <IconRocket className="size-4 shrink-0" />
           Sprints
-          <ChevronRight
-            className={cn("ml-auto size-3.5 shrink-0 transition-transform", isSprintsOpen && "rotate-90")}
+          <IconChevronRight
+            className={cn("ml-auto size-3 shrink-0 transition-transform", isSprintsOpen && "rotate-90")}
           />
         </button>
         {isSprintsOpen && <SprintNavList />}
@@ -41,10 +41,10 @@ export function AppSidebar() {
           aria-expanded={isProjectsOpen}
           className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         >
-          <FolderKanban className="size-4 shrink-0" />
+          <IconLayoutKanban className="size-4 shrink-0" />
           Projects
-          <ChevronRight
-            className={cn("ml-auto size-3.5 shrink-0 transition-transform", isProjectsOpen && "rotate-90")}
+          <IconChevronRight
+            className={cn("ml-auto size-3 shrink-0 transition-transform", isProjectsOpen && "rotate-90")}
           />
         </button>
         {isProjectsOpen && <ProjectNavList />}

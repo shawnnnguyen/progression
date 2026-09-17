@@ -1,8 +1,8 @@
 import { NavLink } from "react-router-dom";
-import type { LucideIcon } from "lucide-react";
+import type { TablerIcon } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 
-export function SidebarNavItem({ to, icon: Icon, label }: { to: string; icon: LucideIcon; label: string }) {
+export function SidebarNavItem({ to, icon: Icon, label }: { to: string; icon: TablerIcon; label: string }) {
   return (
     <NavLink
       to={to}

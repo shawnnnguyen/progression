@@ -1,5 +1,5 @@
 import { useState, type MouseEvent } from "react";
-import { CheckIcon, Trash2Icon } from "lucide-react";
+import { IconCheck, IconTrash } from "@tabler/icons-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -108,7 +108,7 @@ function LabelListItem({
         className="pr-14"
       >
         {label.name}
-        {checked && <CheckIcon className="ml-auto size-3.5 text-[var(--color-neutral-500)]" />}
+        {checked && <IconCheck className="ml-auto size-4 text-[var(--color-neutral-500)]" />}
       </DropdownMenuItem>
       <button
         type="button"
@@ -117,7 +117,7 @@ function LabelListItem({
         aria-label={`Delete ${label.name} label`}
         className="absolute right-7 top-1/2 hidden -translate-y-1/2 rounded-sm p-0.5 text-[var(--color-neutral-500)] outline-none hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50 group-hover/label-item:inline-flex"
       >
-        <Trash2Icon className="size-3.5" />
+        <IconTrash className="size-4" />
       </button>
     </div>
   );

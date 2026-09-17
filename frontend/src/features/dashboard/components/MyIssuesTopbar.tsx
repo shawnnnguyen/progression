@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { IconChevronDown } from "@tabler/icons-react";
 import { PageTopbar } from "@/components/layout/PageTopbar";
 
 export function MyIssuesTopbar() {
@@ -8,7 +8,7 @@ export function MyIssuesTopbar() {
       right={
         <span className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground">
           Grouped by state
-          <ChevronDown className="size-3" />
+          <IconChevronDown className="size-3" />
         </span>
       }
     />

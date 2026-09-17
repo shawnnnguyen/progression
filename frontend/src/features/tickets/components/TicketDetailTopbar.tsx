@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { LinkIcon, CheckIcon, ChevronRightIcon } from "lucide-react";
+import { IconLink, IconCheck, IconChevronRight } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { PageTopbar } from "@/components/layout/PageTopbar";
 import type { ProjectRow } from "@/features/projects/types";
@@ -25,7 +25,7 @@ export function TicketDetailTopbar({ project, ticket }: { project: ProjectRow; t
           >
             {project.name}
           </Link>
-          <ChevronRightIcon className="size-3.5 shrink-0 text-[var(--color-neutral-500)]" />
+          <IconChevronRight className="size-3 shrink-0 text-[var(--color-neutral-500)]" />
           <span className="text-sm font-medium text-[var(--color-text)]">
             {project.key}-{ticket.number}
           </span>
@@ -34,7 +34,7 @@ export function TicketDetailTopbar({ project, ticket }: { project: ProjectRow; t
       right={
         <>
           <Button variant="outline" size="sm" onClick={handleCopyLink}>
-            {copied ? <CheckIcon /> : <LinkIcon />}
+            {copied ? <IconCheck /> : <IconLink />}
             {copied ? "Copied" : "Copy link"}
           </Button>
           <Button variant="outline" size="sm" disabled title="Ticket subscriptions are coming soon">

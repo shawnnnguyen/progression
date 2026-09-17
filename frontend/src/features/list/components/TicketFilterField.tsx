@@ -1,4 +1,4 @@
-import { ChevronDownIcon, XIcon } from "lucide-react";
+import { IconChevronDown, IconX } from "@tabler/icons-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,7 +51,7 @@ export function TicketFilterField({
           ) : (
             <>
               {label}
-              <ChevronDownIcon className="size-3 shrink-0 text-muted-foreground" />
+              <IconChevronDown className="size-3 shrink-0 text-muted-foreground" />
             </>
           )}
         </DropdownMenuTrigger>
@@ -73,7 +73,7 @@ export function TicketFilterField({
           aria-label={`Clear ${label} filter`}
           className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-primary outline-none hover:bg-primary/20"
         >
-          <XIcon className="size-3" />
+          <IconX className="size-3" />
         </button>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { MoreHorizontal } from "lucide-react";
+import { IconDots } from "@tabler/icons-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,7 +36,7 @@ export function ActionMenu({
           className,
         )}
       >
-        <MoreHorizontal className="size-3.5" />
+        <IconDots className="size-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align}>
         {items.map((item) => (

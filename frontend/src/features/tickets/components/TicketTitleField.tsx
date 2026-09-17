@@ -1,4 +1,4 @@
-import { Pencil } from "lucide-react";
+import { IconPencil } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useUpdateTicket } from "../hooks/useUpdateTicket";
@@ -81,7 +81,7 @@ export function TicketTitleField({ ticket, projectId }: { ticket: TicketRow; pro
         aria-hidden
         className="absolute top-1 right-1 rounded-md p-1.5 text-[var(--color-neutral-500)] opacity-0 group-hover:opacity-100"
       >
-        <Pencil className="size-3.5" />
+        <IconPencil className="size-4" />
       </span>
     </div>
   );

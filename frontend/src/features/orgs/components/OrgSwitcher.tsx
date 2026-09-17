@@ -1,4 +1,4 @@
-import { ChevronsUpDown } from "lucide-react";
+import { IconSelector } from "@tabler/icons-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,7 +22,7 @@ export function OrgSwitcher() {
     <DropdownMenu>
       <DropdownMenuTrigger className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm font-medium hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
         <span className="truncate">{currentOrg?.name ?? "Select organization"}</span>
-        <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
+        <IconSelector className="size-4 shrink-0 text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
         {orgs.map((org) => (

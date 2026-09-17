@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { Plus } from "lucide-react";
+import { IconPlus } from "@tabler/icons-react";
 import { StateDot } from "@/components/domain/StateDot";
 import { NewTicketModal } from "@/features/tickets/components/create/NewTicketModal";
 import { DraggableTicketCard } from "./DraggableTicketCard";
@@ -54,7 +54,7 @@ export function WorkflowColumn({
               className="flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
             />
           }
-          triggerChildren={<Plus className="size-3.5" />}
+          triggerChildren={<IconPlus className="size-4" />}
         />
       </div>
       <div

@@ -1,4 +1,4 @@
-import { ChevronDownIcon } from "lucide-react";
+import { IconChevronDown } from "@tabler/icons-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,7 +25,7 @@ export function SortControl({ value, onChange }: { value: SortOption; onChange: 
         className="flex h-7 items-center gap-1 rounded-md px-1.5 text-xs font-medium text-muted-foreground outline-none transition-colors hover:text-foreground data-popup-open:text-foreground"
       >
         Sort: {current?.label ?? "Newest"}
-        <ChevronDownIcon className="size-3 shrink-0" />
+        <IconChevronDown className="size-3 shrink-0" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-48">
         <DropdownMenuRadioGroup value={value} onValueChange={(next) => onChange(next as SortOption)}>

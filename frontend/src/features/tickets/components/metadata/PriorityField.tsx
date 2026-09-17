@@ -1,4 +1,4 @@
-import { ChevronDownIcon } from "lucide-react";
+import { IconChevronDown } from "@tabler/icons-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,7 +40,7 @@ export function PriorityField({
         <DropdownMenuTrigger disabled={disabled} className={fieldTriggerClassName(compact)}>
           <PriorityIcon priority={ticket.priority} />
           <span className="min-w-0 truncate">{PRIORITY_LABEL[ticket.priority]}</span>
-          <ChevronDownIcon className="ml-auto size-3.5 shrink-0 text-[var(--color-neutral-500)]" />
+          <IconChevronDown className="ml-auto size-3 shrink-0 text-[var(--color-neutral-500)]" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
           <DropdownMenuRadioGroup value={ticket.priority} onValueChange={(value) => onChange(value as Priority)}>

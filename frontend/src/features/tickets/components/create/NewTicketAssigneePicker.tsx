@@ -1,4 +1,4 @@
-import { ChevronDownIcon } from "lucide-react";
+import { IconChevronDown } from "@tabler/icons-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +29,7 @@ export function NewTicketAssigneePicker({
       <DropdownMenuTrigger className={fieldTriggerClassName(true)}>
         <UserAvatar userId={value} name={assignee?.name} avatarUrl={assignee?.avatarUrl} size="sm" />
         <span className="min-w-0 truncate">{value ? (assignee?.name ?? "Unknown") : "Unassigned"}</span>
-        <ChevronDownIcon className="ml-auto size-3.5 shrink-0 text-[var(--color-neutral-500)]" />
+        <IconChevronDown className="ml-auto size-3 shrink-0 text-[var(--color-neutral-500)]" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         <DropdownMenuRadioGroup

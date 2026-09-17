@@ -1,4 +1,4 @@
-import { ChevronDownIcon } from "lucide-react";
+import { IconChevronDown } from "@tabler/icons-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,7 +27,7 @@ export function NewTicketStatePicker({
       <DropdownMenuTrigger className={fieldTriggerClassName(true)}>
         {currentState && <StateDot category={currentState.category} />}
         <span className="min-w-0 truncate">{currentState?.name ?? "State"}</span>
-        <ChevronDownIcon className="ml-auto size-3.5 shrink-0 text-[var(--color-neutral-500)]" />
+        <IconChevronDown className="ml-auto size-3 shrink-0 text-[var(--color-neutral-500)]" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         <DropdownMenuRadioGroup value={value} onValueChange={(next) => onChange(next as string)}>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { IconPlus } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -73,7 +73,7 @@ export function InviteTeammatesStep({
           className="w-fit px-0"
           onClick={() => setRows((current) => [...current, emptyRow()])}
         >
-          <Plus className="size-3.5" data-icon="inline-start" />
+          <IconPlus className="size-4" data-icon="inline-start" />
           Add another
         </Button>
       </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { ChevronDownIcon } from "lucide-react";
+import { IconChevronDown } from "@tabler/icons-react";
 import { Dialog, DialogClose, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -55,7 +55,7 @@ function SprintLengthField({ days, onChange }: { days: number; onChange: (days: 
     <DropdownMenu>
       <DropdownMenuTrigger className={fieldTriggerClassName(false)}>
         <span className="min-w-0 truncate">{label}</span>
-        <ChevronDownIcon className="ml-auto size-3.5 shrink-0 text-[var(--color-neutral-500)]" />
+        <IconChevronDown className="ml-auto size-3 shrink-0 text-[var(--color-neutral-500)]" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         <DropdownMenuRadioGroup value={String(days)} onValueChange={(next) => onChange(Number(next))}>

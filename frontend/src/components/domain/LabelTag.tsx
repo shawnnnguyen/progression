@@ -1,4 +1,4 @@
-import { XIcon } from "lucide-react";
+import { IconX } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import type { Label } from "@/features/labels/types";
 
@@ -31,7 +31,7 @@ export function LabelTag({
           aria-label={`Remove ${label.name} label`}
           className="hidden shrink-0 rounded-sm text-[var(--color-neutral-500)] outline-none hover:text-[var(--color-text)] group-hover/label-tag:inline-flex"
         >
-          <XIcon className="size-3.5" />
+          <IconX className="size-4" />
         </button>
       )}
     </span>

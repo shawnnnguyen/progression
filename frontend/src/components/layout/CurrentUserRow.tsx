@@ -1,4 +1,4 @@
-import { LogOut } from "lucide-react";
+import { IconLogout } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -42,7 +42,7 @@ export function CurrentUserRow() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
         <DropdownMenuItem onClick={handleSignOut}>
-          <LogOut className="size-3.5" />
+          <IconLogout className="size-4" />
           Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>
