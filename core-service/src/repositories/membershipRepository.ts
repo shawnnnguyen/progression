@@ -43,10 +43,6 @@ export const membershipRepository: MembershipRepository = {
     return count > 0;
   },
 
-  // Org removal cascade (§2): one transaction deletes the Membership row,
-  // every ProjectMembership override the user holds in this org's projects,
-  // and revokes their RefreshTokens — "loses all access immediately" is
-  // enforced here, not left as an incidental side effect of one row deletion.
   async removeMemberCascade(orgId, userId) {
     await prisma.$transaction([
       prisma.projectMembership.deleteMany({ where: { userId, project: { orgId } } }),

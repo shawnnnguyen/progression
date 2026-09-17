@@ -93,16 +93,6 @@ export async function login(
   return { user, accessToken, refreshToken };
 }
 
-// Rotated on every use (§5): the presented refresh token is revoked and a
-// new one issued in the same repository-level transaction, so replay of an
-// already-used token is detectable (it simply won't be "valid" anymore).
-//
-// Also re-checks deactivatedAt here, not just at login: an access token
-// that was already minted keeps working until it expires (unavoidable with
-// a stateless JWT), but a deactivated user must not be able to mint a new
-// one — this, plus revoking every outstanding refresh token on deactivation
-// (see deactivateSelf below), bounds a deactivated account's remaining
-// access to at most one access-token lifetime.
 export async function refreshAccessToken(
   refreshToken: string,
   deps: AuthServiceDeps,
