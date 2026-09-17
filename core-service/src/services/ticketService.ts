@@ -115,13 +115,6 @@ export async function createTicket(actor: Actor, input: CreateTicketInput, deps:
   return ticket;
 }
 
-export async function getTicket(actor: Actor, ticketId: string, deps: TicketServiceDeps): Promise<TicketRow> {
-  const ticket = await deps.tickets.findTicketById(ticketId);
-  if (!ticket) throw new NotFoundError("Ticket not found");
-  await requireProjectRole(deps, actor, ticket.projectId, "ticket:read");
-  return ticket;
-}
-
 export async function getTicketByNumber(
   actor: Actor,
   projectId: string,

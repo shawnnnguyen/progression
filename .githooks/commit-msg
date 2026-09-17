@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+set -e
+
+COMMIT_MSG_FILE="$1"
+
+# Blocks commit messages that credit an AI coding agent as a (co-)author,
+# e.g. "Co-Authored-By: Claude <...>" or "Generated with [Claude Code]" footers.
+AI_COAUTHOR_PATTERN='^Co-Authored-By:.*(claude|anthropic|copilot|chatgpt|openai|gpt-[0-9]|codex|gemini|cursor|windsurf|devin|amazon *q)'
+AI_FOOTER_PATTERN='(Generated (with|by) .*(Claude|Copilot|Cursor|Codex|Gemini|ChatGPT)|🤖 Generated with|Co-authored by an AI)'
+
+if grep -qiE "$AI_COAUTHOR_PATTERN" "$COMMIT_MSG_FILE" || grep -qiE "$AI_FOOTER_PATTERN" "$COMMIT_MSG_FILE"; then
+  echo "[commit-msg] Blocked: commit message credits an AI coding agent as a contributor."
+  echo "[commit-msg] Remove any 'Co-Authored-By: <AI agent>' or 'Generated with ...' lines and commit again."
+  exit 1
+fi

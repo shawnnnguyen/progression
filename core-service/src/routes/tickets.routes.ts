@@ -90,12 +90,6 @@ export default async function ticketsRoutes(app: FastifyInstance) {
     return reply.send(page);
   });
 
-  app.get("/tickets/:ticketId", async (request, reply) => {
-    const { ticketId } = request.params as { ticketId: string };
-    const ticket = await ticketService.getTicket(request.actor, ticketId, ticketDeps);
-    return reply.send({ data: ticket });
-  });
-
   app.get(
     "/projects/:projectId/tickets/number/:number",
     {

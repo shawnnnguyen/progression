@@ -1,7 +1,6 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import {
   createTicket,
-  getTicket,
   getTicketByNumber,
   transitionTicket,
   updateTicket,
@@ -163,20 +162,6 @@ describe("createTicket", () => {
     await expect(
       createTicket(actor, { projectId: PROJECT_ID, title: "New ticket", stateId: "ghost-state" }, deps),
     ).rejects.toThrow(ValidationError);
-  });
-});
-
-describe("getTicket", () => {
-  it("throws NotFoundError for a nonexistent ticket", async () => {
-    const { deps } = makeDeps();
-    await expect(getTicket(actor, "missing", deps)).rejects.toThrow(NotFoundError);
-  });
-
-  it("returns the ticket when the actor has read access", async () => {
-    const ticket = makeTicket();
-    const { deps } = makeDeps({ tickets: [ticket] });
-    const result = await getTicket(actor, ticket.id, deps);
-    expect(result.id).toBe(ticket.id);
   });
 });
 

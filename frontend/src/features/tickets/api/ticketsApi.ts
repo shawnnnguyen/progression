@@ -40,10 +40,6 @@ export function transitionTicket(ticketId: string, input: { toStateId: string; v
   });
 }
 
-export function getTicket(ticketId: string) {
-  return apiFetch<{ data: TicketRow }>(`/tickets/${ticketId}`);
-}
-
 export function getTicketByNumber(projectId: string, number: number) {
   return apiFetch<{ data: TicketRow }>(`/projects/${projectId}/tickets/number/${number}`);
 }
