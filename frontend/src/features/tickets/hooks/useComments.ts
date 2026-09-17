@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { createComment, listComments } from "../api/commentsApi";
+import { createComment, deleteComment, listComments, updateComment } from "../api/commentsApi";
 
 export function useComments(ticketId: string | undefined) {
   return useQuery({
@@ -21,6 +21,35 @@ export function useCreateComment(ticketId: string) {
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : "Failed to post comment");
+    },
+  });
+}
+
+export function useUpdateComment(ticketId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ commentId, body }: { commentId: string; body: string }) =>
+      updateComment(commentId, body).then((res) => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tickets", ticketId, "comments"] });
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to update comment");
+    },
+  });
+}
+
+export function useDeleteComment(ticketId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (commentId: string) => deleteComment(commentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tickets", ticketId, "comments"] });
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to delete comment");
     },
   });
 }

@@ -1,10 +1,13 @@
 import { useState } from "react";
+import { ActionMenu } from "@/components/domain/ActionMenu";
 import { UserAvatar } from "@/components/domain/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
 import type { EffectiveProjectMember } from "@/features/projects/types";
 import { useActivityFeed, type ActivityFeedItem } from "../hooks/useActivityFeed";
+import { useDeleteComment, useUpdateComment } from "../hooks/useComments";
 import { useEventDescriptionContext } from "../hooks/useEventDescriptionContext";
 import { useTicketEventsInfinite } from "../hooks/useTicketEventsInfinite";
 import type { CommentRow, TicketEventRow } from "../types";
@@ -31,25 +34,89 @@ export function EventLine({ event, ctx }: { event: TicketEventRow; ctx: FeedCont
 export function CommentCard({
   comment,
   memberMap,
+  ticketId,
 }: {
   comment: CommentRow;
   memberMap: Map<string, EffectiveProjectMember>;
+  ticketId: string;
 }) {
   const author = memberMap.get(comment.authorId);
+  const { user } = useCurrentUser();
+  const updateComment = useUpdateComment(ticketId);
+  const deleteComment = useDeleteComment(ticketId);
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(comment.body);
+
+  const isOwn = user?.id === comment.authorId;
+
+  function handleSave() {
+    const trimmed = draft.trim();
+    if (!trimmed || trimmed === comment.body) {
+      setIsEditing(false);
+      setDraft(comment.body);
+      return;
+    }
+    updateComment.mutate(
+      { commentId: comment.id, body: trimmed },
+      { onSuccess: () => setIsEditing(false) },
+    );
+  }
+
+  function handleCancel() {
+    setDraft(comment.body);
+    setIsEditing(false);
+  }
+
+  function handleDelete() {
+    if (!window.confirm("Delete this comment? This can't be undone.")) return;
+    deleteComment.mutate(comment.id);
+  }
+
   return (
     <div className="rounded-md bg-[var(--color-surface)] p-2.5">
-      <div className="flex items-center gap-2 text-xs text-[var(--color-neutral-500)]">
-        <UserAvatar userId={comment.authorId} name={author?.name} avatarUrl={author?.avatarUrl} size="sm" />
-        <span className="font-medium text-[var(--color-text)]">{author?.name ?? "Unknown"}</span>
-        <span>{formatEventTimestamp(comment.createdAt)}</span>
-        {comment.editedAt && <span>· edited {formatTimeOnly(comment.editedAt)}</span>}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-xs text-[var(--color-neutral-500)]">
+          <UserAvatar userId={comment.authorId} name={author?.name} avatarUrl={author?.avatarUrl} size="sm" />
+          <span className="font-medium text-[var(--color-text)]">{author?.name ?? "Unknown"}</span>
+          <span>{formatEventTimestamp(comment.createdAt)}</span>
+          {comment.editedAt && <span>· edited {formatTimeOnly(comment.editedAt)}</span>}
+        </div>
+        {!isEditing && isOwn && (
+          <ActionMenu
+            ariaLabel="Comment actions"
+            items={[
+              { label: "Edit", onClick: () => setIsEditing(true) },
+              { label: "Delete", variant: "destructive", onClick: handleDelete, disabled: deleteComment.isPending },
+            ]}
+          />
+        )}
       </div>
-      <TicketMarkdown content={comment.body} className="mt-1.5" />
+      {isEditing ? (
+        <div className="mt-1.5 flex flex-col gap-2">
+          <textarea
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            rows={3}
+            autoFocus
+            className="w-full resize-none rounded-md border border-[var(--color-divider)] bg-[var(--color-bg)] p-2 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-accent)]"
+          />
+          <div className="flex items-center gap-2">
+            <Button size="xs" disabled={!draft.trim() || updateComment.isPending} onClick={handleSave}>
+              Save
+            </Button>
+            <Button variant="outline" size="xs" disabled={updateComment.isPending} onClick={handleCancel}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <TicketMarkdown content={comment.body} className="mt-1.5" />
+      )}
     </div>
   );
 }
 
-function FeedList({ items, ctx }: { items: ActivityFeedItem[]; ctx: FeedContext }) {
+function FeedList({ items, ctx, ticketId }: { items: ActivityFeedItem[]; ctx: FeedContext; ticketId: string }) {
   if (items.length === 0) {
     return <p className="py-4 text-sm text-[var(--color-neutral-500)]">Nothing here yet.</p>;
   }
@@ -60,7 +127,7 @@ function FeedList({ items, ctx }: { items: ActivityFeedItem[]; ctx: FeedContext 
           <EventLine key={`event-${item.id}`} event={item.event} ctx={ctx} />
         ) : (
           <div key={`comment-${item.id}`}>
-            <CommentCard comment={item.comment} memberMap={ctx.memberMap} />
+            <CommentCard comment={item.comment} memberMap={ctx.memberMap} ticketId={ticketId} />
           </div>
         ),
       )}
@@ -172,7 +239,7 @@ function MergedActivityFeed({
     return (
       <div className="flex flex-col gap-2">
         {ACTIVITY_LABEL}
-        <FeedList items={items} ctx={ctx} />
+        <FeedList items={items} ctx={ctx} ticketId={ticketId} />
       </div>
     );
   }
@@ -187,10 +254,10 @@ function MergedActivityFeed({
         </TabsList>
       </div>
       <TabsContent value="all" className="pt-2">
-        <FeedList items={items} ctx={ctx} />
+        <FeedList items={items} ctx={ctx} ticketId={ticketId} />
       </TabsContent>
       <TabsContent value="comments" className="pt-2">
-        <FeedList items={commentItems} ctx={ctx} />
+        <FeedList items={commentItems} ctx={ctx} ticketId={ticketId} />
       </TabsContent>
     </Tabs>
   );

@@ -23,7 +23,7 @@ export function CommentFeed({ ticketId, projectId }: { ticketId: string; project
   return (
     <div className="flex flex-col gap-3">
       {comments.map((comment) => (
-        <CommentCard key={comment.id} comment={comment} memberMap={memberMap} />
+        <CommentCard key={comment.id} comment={comment} memberMap={memberMap} ticketId={ticketId} />
       ))}
     </div>
   );
